@@ -133,6 +133,11 @@ class PdfDartParser {
     return rows;
   }
 
+  /// Public helper for debugging: return the heuristic-extracted text used by
+  /// the fallback path. Useful to inspect what the heuristic sees when
+  /// `pdftotext` is unavailable.
+  Future<String> extractFallbackText() async => await _extractTextHeuristic(file);
+
   /// Very small heuristic extractor: looks for text-like literal tokens inside
   /// parentheses in the PDF file and joins nearby tokens into lines. This is
   /// not a fully accurate PDF text extractor, but works reasonably on many
@@ -172,6 +177,62 @@ class PdfDartParser {
         for (final nm in numRegex.allMatches(s)) {
           final n = nm.group(0)!.trim();
           if (n.isNotEmpty) buffer.writeln(n);
+        }
+
+        // Coordinate-aware extraction: look for text-show operators (Tj, TJ)
+        // and the most recent text matrix (Tm) or text translation (Td) to
+        // approximate x/y positions for tokens. Group tokens by similar y to
+        // create lines ordered by x.
+        final entries = <Map<String, dynamic>>[];
+        // regex to find Tm matrix: six numbers followed by 'Tm'
+        final tmRe = RegExp(r"(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+Tm");
+        // regex to find text show: either (text) Tj or [ ... ] TJ
+        final tjRe = RegExp(r"\(([^)]*)\)\s*Tj|\[([^\]]*)\]\s*TJ");
+
+        // Iterate through the stream and attempt to pair latest Tm coords with following text
+        double? lastX;
+        double? lastY;
+        final linesIter = s.split(RegExp(r"\r?\n"));
+        for (var ln in linesIter) {
+          // update lastTm if present
+          final tmMatch = tmRe.firstMatch(ln);
+          if (tmMatch != null) {
+            // e and f are groups 5 and 6
+            try {
+              lastX = double.parse(tmMatch.group(5)!);
+              lastY = double.parse(tmMatch.group(6)!);
+            } catch (_) {
+              lastX = null;
+              lastY = null;
+            }
+          }
+
+          for (final tjm in tjRe.allMatches(ln)) {
+            final text = (tjm.group(1) ?? tjm.group(2) ?? '').replaceAll(RegExp(r"\s+"), ' ').trim();
+            if (text.isEmpty) continue;
+            entries.add({
+              'x': lastX ?? 0.0,
+              'y': lastY ?? 0.0,
+              'text': text,
+            });
+          }
+        }
+
+        if (entries.isNotEmpty) {
+          // group by rounded y (bucket) and sort by x within bucket
+          final groups = <int, List<Map<String, dynamic>>>{};
+          for (final e in entries) {
+            final bucket = (e['y'] as double).round();
+            groups.putIfAbsent(bucket, () => []).add(e);
+          }
+
+          final sortedBuckets = groups.keys.toList()..sort((a, b) => b.compareTo(a));
+          for (final b in sortedBuckets) {
+            final items = groups[b]!;
+            items.sort((a, b) => (a['x'] as double).compareTo(b['x'] as double));
+            final line = items.map((it) => it['text'] as String).join(' ').replaceAll(RegExp(r"\s+"), ' ').trim();
+            if (line.isNotEmpty) buffer.writeln(line);
+          }
         }
       } catch (_) {
         // ignore decompression failures
