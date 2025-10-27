@@ -1,6 +1,20 @@
 # ess_pdf_processor
 Small toolkit and parser patterns for extracting IPSC "ESS" (Electronic Scoring System) PDF results into a consolidated CSV for analytics.
 
+## PDF extraction options (Node / Browser)
+
+This project supports two robust PDF→text extraction routes that decode embedded fonts and provide text coordinates:
+
+- Node/pdf.js (recommended for server/CLI): uses `pdfjs-dist` via Node to extract text content with coordinates. Useful for CI and local scripts; the repo includes `scripts/extract_pdfjs.js` and `scripts/package.json` (run `cd scripts && npm install`). The CLI runner supports `--pdfjs` to prefer this path: `dart run bin/run.dart input.pdf out.csv --pdfjs`.
+- Browser (recommended for Flutter web client): use PDF.js in the browser to extract `getTextContent()` per page (text items include transform matrices). We provide a small web helper (`web/pdf_extract.js`) and a Dart JS-interop wrapper (`lib/parser/pdfjs_web_extractor.dart`) so a Flutter web app can extract text client-side without uploading PDFs.
+
+Notes and recommendations:
+- For most users wanting a web-first experience, use the browser-side PDF.js extractor (privacy-preserving — files never leave the user's machine) and then parse coordinates into rows in Dart.
+- For CLI or CI usage, `pdftotext` (system) and Node/pdf.js are both valid options; the CLI prefers `pdftotext` when available, and falls back to the Node/pdf.js path if `--pdfjs` is passed.
+
+See the `web/` folder and `scripts/` for example extractors and the `test/pdfjs_vs_pdftotext_test.dart` parity test.
+
+
 Sample PDF
  - `test/sample_data/Bangbangcup_2025_rd2.pdf` is included as a representative example used during development.
 
