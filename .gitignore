@@ -7,6 +7,12 @@
 .buildlog/
 .history
 
+# Editor / IDE (transient, do not check in)
+.vscode/
+.idea/
+*.iml
+.metadata
+
 
 
 # Flutter repo-specific
