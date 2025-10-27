@@ -20,7 +20,7 @@ class PdfDartParser {
     String currentStage = '';
 
     final rowRegex = RegExp(r"^\s*(\d+)\s+(\d+)\s+(\d+(?:\.\d{1,2})?)\s+(\d+\.\d{4})\s+(\d+\.\d{4})\s+(\d+\.\d{1,2})\s+(\d+)\s+(.+?)\s*$");
-    final divisionRegex = RegExp(r"^(\w[\w ]+)\s+--\s+Overall Stage Results", caseSensitive: false);
+      final divisionRegex = RegExp(r"^([A-Za-z0-9 &/\-]+)\s*--\s*Overall Stage Results", caseSensitive: false);
     final stageRegex = RegExp(r"^Stage\s+(\d+)", caseSensitive: false);
 
     // First, if `pdftotext` is available on the system, prefer it because it
@@ -31,7 +31,7 @@ class PdfDartParser {
         final outText = pr.stdout as String;
         final lines = outText.split(RegExp(r"\r?\n"));
         for (var line in lines) {
-          line = line.trimRight();
+            line = line.trim();
           if (line.isEmpty) continue;
 
           final dmatch = divisionRegex.firstMatch(line);
@@ -86,7 +86,7 @@ class PdfDartParser {
     //    parsing when layout/newlines are lost.
     final lines = fallbackText.split(RegExp(r"\r?\n"));
     for (var line in lines) {
-      line = line.trimRight();
+        line = line.trim();
       if (line.isEmpty) continue;
 
       final dmatch = divisionRegex.firstMatch(line);
@@ -139,8 +139,8 @@ class PdfDartParser {
   /// layout-preserved PDFs where text is stored in literal strings.
   Future<String> _extractTextHeuristic(File file) async {
     final bytes = await file.readAsBytes();
-    final content = latin1.decode(bytes, allowInvalid: true);
-    final buffer = StringBuffer();
+  final content = latin1.decode(bytes, allowInvalid: true);
+  final buffer = StringBuffer();
 
     // First try: find stream...endstream blocks and attempt Flate (zlib)
     final streamRe = RegExp(r"stream\s*\r?\n", multiLine: true);
@@ -164,6 +164,15 @@ class PdfDartParser {
           var token = pm.group(1)!.replaceAll(RegExp(r"\s+"), ' ').trim();
           if (token.isNotEmpty) buffer.writeln(token);
         }
+
+        // Also extract numeric-like tokens (numbers with decimals) from the
+        // decompressed stream. Some PDFs don't store visible text in
+        // parentheses but numeric text appears as separate tokens.
+        final numRegex = RegExp(r"\d+\.?\d{0,4}");
+        for (final nm in numRegex.allMatches(s)) {
+          final n = nm.group(0)!.trim();
+          if (n.isNotEmpty) buffer.writeln(n);
+        }
       } catch (_) {
         // ignore decompression failures
       }
@@ -177,6 +186,15 @@ class PdfDartParser {
       var token = m.group(1)!.replaceAll(RegExp(r"\s+"), ' ').trim();
       if (token.isEmpty) continue;
       buffer.writeln(token);
+    }
+
+    // Also extract numeric-like tokens from the raw content as a last resort.
+    // This increases the chance that the token-based row scanner finds the
+    // numeric sequence even if textual names are missing or split.
+    final numRegex2 = RegExp(r"\d+\.?\d{0,4}");
+    for (final nm in numRegex2.allMatches(content)) {
+      final n = nm.group(0)!.trim();
+      if (n.isNotEmpty) buffer.writeln(n);
     }
 
     return buffer.toString();
