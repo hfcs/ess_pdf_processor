@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Wrapper to build the example Flutter web demo from the repository root.
+# Wrapper to build the example Flutter web app from the repository root.
 # This allows running a single command from the top-level to build the nested
 # Flutter example.
 

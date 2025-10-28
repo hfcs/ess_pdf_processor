@@ -2,7 +2,7 @@ import '../models/result_row.dart';
 
 /// Parse extracted text (layout-preserved or heuristic) into a list of
 /// [ResultRow]. This function is platform-neutral and can be used by both
-/// the CLI and the web demo (where text comes from pdf.js).
+/// the CLI and the web app (where text comes from pdf.js).
 List<ResultRow> parseTextToRows(String text, {String defaultDivision = 'UNKNOWN'}) {
   final rows = <ResultRow>[];
   var currentDivision = defaultDivision;

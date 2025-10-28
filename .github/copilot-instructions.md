@@ -5,12 +5,12 @@ High-value guidance for working on the ESS PDF processor (current state: feature
 ## What's changed (current state)
 - The CSV now includes a `class` column immediately after `competitor_name`.
 - A web-safe, shared shooter-list text parser was added: `lib/parser/shooter_list_text_parser.dart`.
-  - This function `parseShooterListFromText(String)` is reused by the CLI and the Flutter web demo.
-- The Flutter web demo (`web_app`) now supports loading a shooter-list PDF (via pdf.js in-browser extraction), shows a small indicator with the number of entries loaded, and applies the shooter-list mapping (competitor number → class) to parsed rows.
+  - This function `parseShooterListFromText(String)` is reused by the CLI and the Flutter web app.
+  - The Flutter web app (`web_app`) now supports loading a shooter-list PDF (via pdf.js in-browser extraction), shows a small indicator with the number of entries loaded, and applies the shooter-list mapping (competitor number → class) to parsed rows.
 - Unit tests were added for the shooter-list text parser: `test/shooter_list_text_parser_test.dart`.
 - CI additions:
   - `shooter_list_tests` job runs the parser unit tests.
-  - A `deploy_web` job builds the Flutter web demo and deploys to Firebase Hosting using the Firebase GitHub Action (expects `FIREBASE_SERVICE_ACCOUNT` secret).
+  - A `deploy_web` job builds the Flutter web app and deploys to Firebase Hosting using the Firebase GitHub Action (expects `FIREBASE_SERVICE_ACCOUNT` secret).
 - A top-level helper script `build_example_web.sh` was added so maintainers can run a single command from repo root to build the nested Flutter example.
 
 ## Quick developer notes (how to work with changes)
@@ -23,7 +23,7 @@ High-value guidance for working on the ESS PDF processor (current state: feature
 - Running locally
   - Run unit tests:
     dart test -r expanded
-  - Build the Flutter web demo from the repository root:
+  - Build the Flutter web app from the repository root:
     chmod +x ./build_example_web.sh
     ./build_example_web.sh
     (this will cd into `web_app` and run `flutter build web --release`)

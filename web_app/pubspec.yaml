@@ -1,5 +1,5 @@
 name: flutter_web_demo
-description: Minimal Flutter web demo for ess_pdf_processor PDF.js browser extractor
+description: Minimal Flutter web app for ess_pdf_processor PDF.js browser extractor
 publish_to: none
 
 environment:
@@ -9,7 +9,7 @@ dependencies:
   flutter:
     sdk: flutter
   ess_pdf_processor:
-    path: ../../
+    path: ../
 
 dev_dependencies:
   flutter_test:

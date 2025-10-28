@@ -3,7 +3,7 @@
 /// Provides parsing heuristics to extract competitor-number -> class token
 /// mappings from layout-preserved PDF-to-text output. This file intentionally
 /// avoids any `dart:io` or platform-specific APIs so it can be reused in the
-/// web demo and CLI code.
+/// web app and CLI code.
 
 Map<int, String> parseShooterListFromText(String text) {
   final map = <int, String>{};

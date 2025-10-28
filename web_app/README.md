@@ -1,6 +1,6 @@
-ESS Flutter Web demo
+ESS Flutter web app
 
-This is a minimal Flutter web demo that shows how to call a browser-side PDF.js helper (available as `extractPdfArrayBuffer`) from Dart/Flutter web.
+This is a minimal Flutter web app that shows how to call a browser-side PDF.js helper (available as `extractPdfArrayBuffer`) from Dart/Flutter web.
 
 Run locally:
 
@@ -39,7 +39,7 @@ If you'd like to enable debug mode quickly for local development, there's a tiny
 This writes `web/debug.js`. Remove `web/debug.js` (or commit ignoring it) before creating production builds.
 
 Firebase Hosting (optional)
- - You can deploy this Flutter web demo to Firebase Hosting. The repo includes a sample Firebase config and a helper deploy script under `web_app`.
+ - You can deploy this Flutter web app to Firebase Hosting. The repo includes a sample Firebase config and a helper deploy script under `web_app`.
 
 Prerequisites:
  - A Firebase project named `ess-pdf-processor` (or change `.firebaserc`).

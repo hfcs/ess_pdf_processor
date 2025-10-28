@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build and deploy the Flutter web demo to Firebase Hosting.
+# Build and deploy the Flutter web app to Firebase Hosting.
 # Usage (from repo root):
 #   cd web_app
 #   ./scripts/deploy_firebase.sh
@@ -11,7 +11,7 @@ if ! command -v firebase >/dev/null 2>&1; then
   exit 2
 fi
 
-echo "Building Flutter web demo..."
+echo "Building Flutter web app..."
 flutter build web --release
 
 # Deploy to the configured Firebase project in .firebaserc (default: ess-pdf-processor)

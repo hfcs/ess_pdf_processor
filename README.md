@@ -84,7 +84,7 @@ If you run `flutter build web --release` from the repository root without changi
 Target file "lib/main.dart" not found. Please fix it
 ```
 
-Why this happens: `flutter` expects to be run from inside a Flutter project directory (a folder containing `pubspec.yaml` and `lib/main.dart`). The repository root is not the Flutter project's root — the demo is nested in `web_app`.
+Why this happens: `flutter` expects to be run from inside a Flutter project directory (a folder containing `pubspec.yaml` and `lib/main.dart`). The repository root is not the Flutter project's root — the web app is nested in `web_app`.
 
 How to fix it (pick one):
 
@@ -116,10 +116,10 @@ All three options build the same Flutter web project (`web_app`) and will create
 
 If you don't have `pdftotext` available locally, the tests still pass when run with the `--pdfjs` flag (the Node/pdf.js extractor) — see the CI workflow for how the runner installs `poppler-utils`.
 
-## Flutter Web demo (example)
+## Flutter web app (example)
 
 
-There is a small Flutter web demo under `web_app` that demonstrates a file picker and uses the browser `pdf.js` extractor (the helper `web/pdf_extract.js` included in this repo) to extract text lines from a client-selected PDF. It's intentionally minimal and meant to be used as a starting point for integrating the extractor into a Flutter web UI.
+There is a small Flutter web app under `web_app` that demonstrates a file picker and uses the browser `pdf.js` extractor (the helper `web/pdf_extract.js` included in this repo) to extract text lines from a client-selected PDF. It's intentionally minimal and meant to be used as a starting point for integrating the extractor into a Flutter web UI.
 
 To run the demo:
 
@@ -132,14 +132,15 @@ flutter run -d chrome
 
 Notes:
 - The demo's `web/index.html` references the repo's `web/pdf_extract.js` and a CDN copy of `pdf.js`. For production you should bundle `pdfjs-dist` assets with your app or host them in a controlled location.
+
 - The demo shows the extracted lines in a simple list and is useful for verifying that `extractPdfArrayBuffer` is callable from Dart/Flutter web via JS interop.
 
--- Debugging the demo: the Flutter web demo supports an optional local debug toggle (`window.__ESS_DEBUG__`) and a helper script in `web_app/scripts/generate_debug_js.sh` to quickly create `web/debug.js` which enables verbose logs in DevTools. See `web_app/README.md` for details.
+- Debugging the web app: the Flutter web app supports an optional local debug toggle (`window.__ESS_DEBUG__`) and a helper script in `web_app/scripts/generate_debug_js.sh` to quickly create `web/debug.js` which enables verbose logs in DevTools. See `web_app/README.md` for details.
 
 
-## Building & Deploying the Flutter web demo (root build)
+## Building & Deploying the Flutter web app (root build)
 
-We build the Flutter web demo from the repository root so CI and local workflows use a consistent path.
+We build the Flutter web app from the repository root so CI and local workflows use a consistent path.
 
 Build (from repo root):
 
