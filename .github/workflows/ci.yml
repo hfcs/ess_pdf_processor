@@ -73,15 +73,15 @@ jobs:
 
       - name: Get example packages
         run: flutter pub get
-        working-directory: example/flutter_web_demo
+        working-directory: web_app
 
       - name: Flutter analyze (example)
         run: flutter analyze
-        working-directory: example/flutter_web_demo
+        working-directory: web_app
 
       - name: Flutter test (example)
         run: flutter test
-        working-directory: example/flutter_web_demo
+        working-directory: web_app
 
   deploy_web:
     runs-on: ubuntu-latest
@@ -100,7 +100,7 @@ jobs:
 
       - name: Build Flutter web (example)
         run: flutter build web --release
-        working-directory: example/flutter_web_demo
+        working-directory: web_app
 
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0

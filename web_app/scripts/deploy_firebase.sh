@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Build and deploy the Flutter web demo to Firebase Hosting.
 # Usage (from repo root):
-#   cd example/flutter_web_demo
+#   cd web_app
 #   ./scripts/deploy_firebase.sh
 set -euo pipefail
 

@@ -6,10 +6,10 @@
 set -euo pipefail
 
 ROOT_DIR=$(cd "$(dirname "$0")" && pwd)
-EXAMPLE_DIR="$ROOT_DIR/example/flutter_web_demo"
+EXAMPLE_DIR="$ROOT_DIR/web_app"
 
 if [ ! -d "$EXAMPLE_DIR" ]; then
-  echo "Error: example directory not found: $EXAMPLE_DIR" >&2
+  echo "Error: web_app directory not found: $EXAMPLE_DIR" >&2
   exit 1
 fi
 

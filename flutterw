@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Lightweight wrapper to run flutter commands against the example Flutter web demo
+# Usage: ./flutterw <flutter-args...>
+
+set -euo pipefail
+
+PROJECT_DIR="web_app"
+
+if [ "$#" -eq 0 ]; then
+  echo "Usage: $0 <flutter args...>"
+  exit 1
+fi
+
+# Try to use `flutter -C` when available; if the installed flutter doesn't support -C
+# (older versions), fallback to changing directory and running flutter there.
+if flutter -h 2>&1 | grep -q " -C\|--directory"; then
+  echo "Running: flutter -C $PROJECT_DIR $*"
+  flutter -C "$PROJECT_DIR" "$@"
+else
+  echo "Running: (cd $PROJECT_DIR && flutter $*)"
+  (cd "$PROJECT_DIR" && flutter "$@")
+fi

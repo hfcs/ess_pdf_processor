@@ -1,0 +1,9 @@
+{
+  "name": "ess_pdf_processor-root-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build-web": "flutter -C web_app pub get && flutter -C web_app build web --release",
+    "clean-web": "rm -rf web_app/build"
+  }
+}

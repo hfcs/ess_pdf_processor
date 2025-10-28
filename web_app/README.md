@@ -5,7 +5,7 @@ This is a minimal Flutter web demo that shows how to call a browser-side PDF.js 
 Run locally:
 
 ```bash
-cd example/flutter_web_demo
+cd web_app
 flutter pub get
 flutter run -d chrome
 ```
@@ -30,7 +30,7 @@ window.__ESS_DEBUG__ = true
 
 Quick toggle script
 
-If you'd like to enable debug mode quickly for local development, there's a tiny helper that creates a `web/debug.js` file which sets the flag before the app loads. From the `example/flutter_web_demo` folder run:
+If you'd like to enable debug mode quickly for local development, there's a tiny helper that creates a `web/debug.js` file which sets the flag before the app loads. From the `web_app` folder run:
 
 ```bash
 ./scripts/generate_debug_js.sh
@@ -39,7 +39,7 @@ If you'd like to enable debug mode quickly for local development, there's a tiny
 This writes `web/debug.js`. Remove `web/debug.js` (or commit ignoring it) before creating production builds.
 
 Firebase Hosting (optional)
- - You can deploy this Flutter web demo to Firebase Hosting. The repo includes a sample Firebase config and a helper deploy script under `example/flutter_web_demo`.
+ - You can deploy this Flutter web demo to Firebase Hosting. The repo includes a sample Firebase config and a helper deploy script under `web_app`.
 
 Prerequisites:
  - A Firebase project named `ess-pdf-processor` (or change `.firebaserc`).
@@ -48,7 +48,7 @@ Prerequisites:
 Quick deploy (from repo root):
 
 ```bash
-cd example/flutter_web_demo
+cd web_app
 # optional: generate debug.js for local debugging
 ./scripts/generate_debug_js.sh
 # build web
@@ -58,5 +58,5 @@ flutter build web --release
 ```
 
 Notes:
- - The Firebase config (`firebase.json`) expects `build/web` as the public directory (Flutter's web build output).
+ - The Firebase config (`firebase.json`) expects `web_app/build/web` as the public directory (Flutter's web build output).
  - Make sure the Firebase project exists and you have permission to deploy to it. You can create a project in the Firebase Console or with `firebase projects:create ess-pdf-processor`.

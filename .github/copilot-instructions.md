@@ -6,7 +6,7 @@ High-value guidance for working on the ESS PDF processor (current state: feature
 - The CSV now includes a `class` column immediately after `competitor_name`.
 - A web-safe, shared shooter-list text parser was added: `lib/parser/shooter_list_text_parser.dart`.
   - This function `parseShooterListFromText(String)` is reused by the CLI and the Flutter web demo.
-- The Flutter web demo (`example/flutter_web_demo`) now supports loading a shooter-list PDF (via pdf.js in-browser extraction), shows a small indicator with the number of entries loaded, and applies the shooter-list mapping (competitor number → class) to parsed rows.
+- The Flutter web demo (`web_app`) now supports loading a shooter-list PDF (via pdf.js in-browser extraction), shows a small indicator with the number of entries loaded, and applies the shooter-list mapping (competitor number → class) to parsed rows.
 - Unit tests were added for the shooter-list text parser: `test/shooter_list_text_parser_test.dart`.
 - CI additions:
   - `shooter_list_tests` job runs the parser unit tests.
@@ -26,7 +26,7 @@ High-value guidance for working on the ESS PDF processor (current state: feature
   - Build the Flutter web demo from the repository root:
     chmod +x ./build_example_web.sh
     ./build_example_web.sh
-    (this will cd into `example/flutter_web_demo` and run `flutter build web --release`)
+    (this will cd into `web_app` and run `flutter build web --release`)
 
 - CI / Deployment
   - The workflow uses `FirebaseExtended/action-hosting-deploy@v0` and expects a repository secret named `FIREBASE_SERVICE_ACCOUNT` containing the service account JSON for deployment.

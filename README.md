@@ -76,19 +76,56 @@ brew install poppler
 ```bash
 dart pub get
 dart test
+### Troubleshooting
+
+If you run `flutter build web --release` from the repository root without changing directory, Flutter will look for a `lib/main.dart` in the current directory and fail with an error like:
+
+```
+Target file "lib/main.dart" not found. Please fix it
+```
+
+Why this happens: `flutter` expects to be run from inside a Flutter project directory (a folder containing `pubspec.yaml` and `lib/main.dart`). The repository root is not the Flutter project's root — the demo is nested in `web_app`.
+
+How to fix it (pick one):
+
+- Use the provided wrapper (recommended):
+
+```bash
+chmod +x ./build_example_web.sh
+./build_example_web.sh
+```
+
+
+- Change into the Flutter example directory and run the build there:
+
+```bash
+cd web_app
+flutter pub get
+flutter build web --release
+```
+
+
+- Or run Flutter while telling it to change directory first (single command):
+
+```bash
+flutter -C web_app build web --release
+```
+
+All three options build the same Flutter web project (`web_app`) and will create `web_app/build/web` as output.
 ```
 
 If you don't have `pdftotext` available locally, the tests still pass when run with the `--pdfjs` flag (the Node/pdf.js extractor) — see the CI workflow for how the runner installs `poppler-utils`.
 
 ## Flutter Web demo (example)
 
-There is a small Flutter web demo under `example/flutter_web_demo` that demonstrates a file picker and uses the browser `pdf.js` extractor (the helper `web/pdf_extract.js` included in this repo) to extract text lines from a client-selected PDF. It's intentionally minimal and meant to be used as a starting point for integrating the extractor into a Flutter web UI.
+
+There is a small Flutter web demo under `web_app` that demonstrates a file picker and uses the browser `pdf.js` extractor (the helper `web/pdf_extract.js` included in this repo) to extract text lines from a client-selected PDF. It's intentionally minimal and meant to be used as a starting point for integrating the extractor into a Flutter web UI.
 
 To run the demo:
 
 ```bash
 # from repo root
-cd example/flutter_web_demo
+cd web_app
 flutter pub get
 flutter run -d chrome
 ```
@@ -97,7 +134,7 @@ Notes:
 - The demo's `web/index.html` references the repo's `web/pdf_extract.js` and a CDN copy of `pdf.js`. For production you should bundle `pdfjs-dist` assets with your app or host them in a controlled location.
 - The demo shows the extracted lines in a simple list and is useful for verifying that `extractPdfArrayBuffer` is callable from Dart/Flutter web via JS interop.
 
-- Debugging the demo: the Flutter web demo supports an optional local debug toggle (`window.__ESS_DEBUG__`) and a helper script in `example/flutter_web_demo/scripts/generate_debug_js.sh` to quickly create `web/debug.js` which enables verbose logs in DevTools. See `example/flutter_web_demo/README.md` for details.
+-- Debugging the demo: the Flutter web demo supports an optional local debug toggle (`window.__ESS_DEBUG__`) and a helper script in `web_app/scripts/generate_debug_js.sh` to quickly create `web/debug.js` which enables verbose logs in DevTools. See `web_app/README.md` for details.
 
 
 ## Building & Deploying the Flutter web demo (root build)
@@ -111,15 +148,15 @@ chmod +x ./build_example_web.sh
 ./build_example_web.sh
 ```
 
-This wrapper will cd into `example/flutter_web_demo` and run `flutter build web --release`. The produced web artifact will be placed in:
+This wrapper will cd into `web_app` and run `flutter build web --release`. The produced web artifact will be placed in:
 
 ```
-example/flutter_web_demo/build/web
+web_app/build/web
 ```
 
 CI / Deploy notes
 
-- This repository now contains a root-level `firebase.json` that points `hosting.public` to `example/flutter_web_demo/build/web`. The GitHub Actions deploy job uses the Firebase Hosting GitHub Action.
+-- This repository now contains a root-level `firebase.json` that points `hosting.public` to `web_app/build/web`. The GitHub Actions deploy job uses the Firebase Hosting GitHub Action.
 - To enable automatic deployments from CI you must add a repository secret named `FIREBASE_SERVICE_ACCOUNT` containing the Firebase service account JSON (the service account needs Hosting deploy permissions). See repository Settings → Secrets & variables → Actions.
 
 Deploy locally (manual steps)

@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "example/flutter_web_demo/build/web",
+    "public": "web_app/build/web",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "cleanUrls": true,
     "rewrites": [
