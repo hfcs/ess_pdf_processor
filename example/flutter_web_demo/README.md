@@ -37,3 +37,26 @@ If you'd like to enable debug mode quickly for local development, there's a tiny
 ```
 
 This writes `web/debug.js`. Remove `web/debug.js` (or commit ignoring it) before creating production builds.
+
+Firebase Hosting (optional)
+ - You can deploy this Flutter web demo to Firebase Hosting. The repo includes a sample Firebase config and a helper deploy script under `example/flutter_web_demo`.
+
+Prerequisites:
+ - A Firebase project named `ess-pdf-processor` (or change `.firebaserc`).
+ - Firebase CLI installed and authenticated: `npm install -g firebase-tools` then `firebase login`.
+
+Quick deploy (from repo root):
+
+```bash
+cd example/flutter_web_demo
+# optional: generate debug.js for local debugging
+./scripts/generate_debug_js.sh
+# build web
+flutter build web --release
+# deploy (will use project in .firebaserc)
+./scripts/deploy_firebase.sh
+```
+
+Notes:
+ - The Firebase config (`firebase.json`) expects `build/web` as the public directory (Flutter's web build output).
+ - Make sure the Firebase project exists and you have permission to deploy to it. You can create a project in the Firebase Console or with `firebase projects:create ess-pdf-processor`.
