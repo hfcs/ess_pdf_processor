@@ -43,3 +43,59 @@ Next steps
  - Implement a parser that either (A) consumes `pdftotext -layout` output using the regex above, or (B) uses coordinate-based extraction from a Dart PDF library for higher robustness (recommended for wrapped names and inconsistent spacing).
 
 If you'd like, I can scaffold a pure-Dart parser or a Flutter app (file picker + drag/drop + preview + CSV export). Tell me which you prefer and I'll generate the initial project files.
+
+## CI: running parity tests headlessly
+
+This repository includes a parity test that compares text extraction between the system `pdftotext` route and the `pdf.js` (Node) route. The project provides a GitHub Actions workflow to run these tests in a headless CI environment (see `.github/workflows/ci.yml`).
+
+What the CI does
+- Installs Node and Dart on the runner
+- Installs Node dependencies in `scripts/` (pdfjs-dist)
+- Installs `poppler-utils` (provides `pdftotext`) on the Ubuntu runner
+- Runs `dart pub get` and then `dart test` which runs the parity tests
+
+Local headless test (recommended steps)
+
+1. Install Node (v18+ recommended) and npm, and ensure `flutter`/`dart` are on your PATH.
+2. From repo root, install Node deps used by the Node/pdf.js extractor:
+
+```bash
+cd scripts
+npm ci
+cd -
+```
+
+3. Ensure `pdftotext` is available for the pdftotext extraction path. On macOS with Homebrew:
+
+```bash
+brew install poppler
+```
+
+4. Get Dart packages and run tests:
+
+```bash
+dart pub get
+dart test
+```
+
+If you don't have `pdftotext` available locally, the tests still pass when run with the `--pdfjs` flag (the Node/pdf.js extractor) — see the CI workflow for how the runner installs `poppler-utils`.
+
+## Flutter Web demo (example)
+
+There is a small Flutter web demo under `example/flutter_web_demo` that demonstrates a file picker and uses the browser `pdf.js` extractor (the helper `web/pdf_extract.js` included in this repo) to extract text lines from a client-selected PDF. It's intentionally minimal and meant to be used as a starting point for integrating the extractor into a Flutter web UI.
+
+To run the demo:
+
+```bash
+# from repo root
+cd example/flutter_web_demo
+flutter pub get
+flutter run -d chrome
+```
+
+Notes:
+- The demo's `web/index.html` references the repo's `web/pdf_extract.js` and a CDN copy of `pdf.js`. For production you should bundle `pdfjs-dist` assets with your app or host them in a controlled location.
+- The demo shows the extracted lines in a simple list and is useful for verifying that `extractPdfArrayBuffer` is callable from Dart/Flutter web via JS interop.
+
+- Debugging the demo: the Flutter web demo supports an optional local debug toggle (`window.__ESS_DEBUG__`) and a helper script in `example/flutter_web_demo/scripts/generate_debug_js.sh` to quickly create `web/debug.js` which enables verbose logs in DevTools. See `example/flutter_web_demo/README.md` for details.
+
