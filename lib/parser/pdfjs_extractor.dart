@@ -4,8 +4,8 @@ import 'dart:io';
 /// the extracted plain text (lines separated by \n). Requires `node` and
 /// `pdfjs-dist` to be available (install via `npm install pdfjs-dist`).
 Future<String> extractWithPdfJs(File file) async {
-  final script = Platform.script.resolve('../../scripts/extract_pdfjs.js').toFilePath();
-  final proc = await Process.start('node', [script, file.path]);
+  final script = 'scripts/extract_pdfjs.js';
+  final proc = await Process.start('node', [script, file.path], workingDirectory: Directory.current.path);
   final out = StringBuffer();
   final err = StringBuffer();
   await for (final data in proc.stdout.transform(SystemEncoding().decoder)) {
