@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Set up Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 'stable'
+
+      - name: Install system deps (poppler-utils for pdftotext)
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
+
+      - name: Install Node deps for pdf.js extractor
+        working-directory: scripts
+        run: npm ci
+
+      - name: Get Dart packages
+        run: dart pub get
+
+      - name: Run regression parity test
+        run: dart test test/regression_field_parity_test.dart -r expanded
+
+      - name: Run full test suite
+        run: dart test -r expanded
+
+  flutter_example:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 'stable'
+
+      - name: Show Flutter info
+        run: flutter --version
+
+      - name: Get example packages
+        run: flutter pub get
+        working-directory: example/flutter_web_demo
+
+      - name: Flutter analyze (example)
+        run: flutter analyze
+        working-directory: example/flutter_web_demo
+
+      - name: Flutter test (example)
+        run: flutter test
+        working-directory: example/flutter_web_demo
