@@ -3,6 +3,7 @@ class ResultRow {
   final String competitorName;
   final String stage;
   final String division;
+  final String classification;
   final double points;
   final double time;
   final double hitFactor;
@@ -12,6 +13,7 @@ class ResultRow {
   ResultRow({
     required this.competitorNumber,
     required this.competitorName,
+    this.classification = '',
     required this.stage,
     required this.division,
     required this.points,
@@ -23,7 +25,8 @@ class ResultRow {
 
   static List<String> csvHeader() => [
         'competitor_number',
-        'competitor_name',
+    'competitor_name',
+    'class',
         'stage',
         'division',
         'points',
@@ -36,6 +39,7 @@ class ResultRow {
   List<String> toCsvRow() => [
         competitorNumber.toString(),
         '"${competitorName.replaceAll('"', '""')}"',
+    '"${classification.replaceAll('"', '""')}"',
         stage.toString(),
         division.toString(),
         points.toStringAsFixed(2),
