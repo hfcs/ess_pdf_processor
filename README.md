@@ -99,3 +99,42 @@ Notes:
 
 - Debugging the demo: the Flutter web demo supports an optional local debug toggle (`window.__ESS_DEBUG__`) and a helper script in `example/flutter_web_demo/scripts/generate_debug_js.sh` to quickly create `web/debug.js` which enables verbose logs in DevTools. See `example/flutter_web_demo/README.md` for details.
 
+
+## Building & Deploying the Flutter web demo (root build)
+
+We build the Flutter web demo from the repository root so CI and local workflows use a consistent path.
+
+Build (from repo root):
+
+```bash
+chmod +x ./build_example_web.sh
+./build_example_web.sh
+```
+
+This wrapper will cd into `example/flutter_web_demo` and run `flutter build web --release`. The produced web artifact will be placed in:
+
+```
+example/flutter_web_demo/build/web
+```
+
+CI / Deploy notes
+
+- This repository now contains a root-level `firebase.json` that points `hosting.public` to `example/flutter_web_demo/build/web`. The GitHub Actions deploy job uses the Firebase Hosting GitHub Action.
+- To enable automatic deployments from CI you must add a repository secret named `FIREBASE_SERVICE_ACCOUNT` containing the Firebase service account JSON (the service account needs Hosting deploy permissions). See repository Settings → Secrets & variables → Actions.
+
+Deploy locally (manual steps)
+
+```bash
+# build the web artifact
+./build_example_web.sh
+
+# login with firebase CLI (one-time)
+npm install -g firebase-tools
+firebase login
+
+# deploy to hosting
+firebase deploy --only hosting --project ess-pdf-processor
+```
+
+If you'd rather have CI produce preview deploys for PRs instead of deploying to production on main, I can update the workflow to use preview channels or to only deploy on tags.
+

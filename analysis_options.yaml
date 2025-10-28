@@ -1,0 +1,9 @@
+analyzer:
+  exclude:
+    - example/**
+    - example/flutter_web_demo/**
+
+# Optionally include the recommended Flutter lints if the main package is
+# a Flutter package. Keep this commented if you're running in a pure Dart
+# environment without Flutter configured.
+# include: package:flutter_lints/flutter.yaml
