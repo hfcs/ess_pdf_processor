@@ -82,3 +82,33 @@ jobs:
       - name: Flutter test (example)
         run: flutter test
         working-directory: example/flutter_web_demo
+
+  deploy_web:
+    runs-on: ubuntu-latest
+    needs: flutter_example
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: flutter-actions/setup-flutter@v2
+        with:
+          channel: 'stable'
+
+      - name: Show Flutter info
+        run: flutter --version
+
+      - name: Build Flutter web (example)
+        run: flutter build web --release
+        working-directory: example/flutter_web_demo
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools@latest
+
+      - name: Firebase deploy to hosting
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: |
+          cd example/flutter_web_demo
+          # Use token from repo secrets. Ensure FIREBASE_TOKEN is set in repo settings.
+          firebase deploy --only hosting --project ess-pdf-processor --token "$FIREBASE_TOKEN"
