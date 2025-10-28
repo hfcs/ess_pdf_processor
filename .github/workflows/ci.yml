@@ -7,6 +7,23 @@ on:
     branches: [ main ]
 
 jobs:
+  shooter_list_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 'stable'
+
+      - name: Get Dart packages
+        run: dart pub get
+
+      - name: Run shooter-list parser unit tests
+        run: dart test test/shooter_list_text_parser_test.dart -r expanded
+
   test:
     runs-on: ubuntu-latest
     steps:
