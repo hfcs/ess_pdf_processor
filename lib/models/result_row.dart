@@ -3,7 +3,7 @@ class ResultRow {
   final String competitorName;
   final String stage;
   final String division;
-  String classification;
+  final String classification;
   final double points;
   final double time;
   final double hitFactor;
