@@ -4,9 +4,22 @@
 
 const fs = require('fs');
 const path = require('path');
-const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
+// Load pdfjs-dist via dynamic import to support modern package layouts.
+let pdfjsLib;
+async function loadPdfJs() {
+  try {
+    // prefer the legacy ESM build
+    const mod = await import('pdfjs-dist/legacy/build/pdf.mjs');
+    return mod;
+  } catch (e) {
+    // fallback to default package
+    return await import('pdfjs-dist');
+  }
+}
 
 async function extract(filePath) {
+  const mod = await loadPdfJs();
+  pdfjsLib = mod.default || mod;
   const data = new Uint8Array(fs.readFileSync(filePath));
   const loadingTask = pdfjsLib.getDocument({data});
   const doc = await loadingTask.promise;

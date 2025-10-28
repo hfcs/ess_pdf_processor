@@ -4,6 +4,7 @@ import 'dart:io';
 // This parser prefers a pure-Dart heuristic extraction (best-effort). If you
 // later add a pure-Dart PDF reader with a stable text API, we can wire it in.
 import '../models/result_row.dart';
+import 'text_parser.dart';
 
 class PdfDartParser {
   final File file;
@@ -27,50 +28,10 @@ class PdfDartParser {
     // produces reliable layout-preserved text which our regex expects.
     try {
       final pr = await Process.run('pdftotext', ['-layout', '-enc', 'UTF-8', file.path, '-']);
-      if (pr.exitCode == 0) {
+        if (pr.exitCode == 0) {
         final outText = pr.stdout as String;
-        final lines = outText.split(RegExp(r"\r?\n"));
-        for (var line in lines) {
-            line = line.trim();
-          if (line.isEmpty) continue;
-
-          final dmatch = divisionRegex.firstMatch(line);
-          if (dmatch != null) {
-            currentDivision = dmatch.group(1)!.trim();
-            continue;
-          }
-
-          final smatch = stageRegex.firstMatch(line);
-          if (smatch != null) {
-            currentStage = smatch.group(1)!;
-            continue;
-          }
-
-          final m = rowRegex.firstMatch(line);
-          if (m != null) {
-            final pts = double.tryParse(m.group(2)!) ?? 0.0;
-            final time = double.tryParse(m.group(3)!) ?? 0.0;
-            final hitFactor = double.tryParse(m.group(4)!) ?? 0.0;
-            final stagePoints = double.tryParse(m.group(5)!) ?? 0.0;
-            final stagePercent = double.tryParse(m.group(6)!) ?? 0.0;
-            final compNum = int.tryParse(m.group(7)!) ?? 0;
-            final name = m.group(8)!.trim();
-
-            rows.add(ResultRow(
-              competitorNumber: compNum,
-              competitorName: name,
-              stage: currentStage,
-              division: currentDivision,
-              points: pts,
-              time: time,
-              hitFactor: hitFactor,
-              stagePoints: stagePoints,
-              stagePercentage: stagePercent,
-            ));
-          }
-        }
-
-        if (rows.isNotEmpty) return rows;
+        final parsed = parseTextToRows(outText, defaultDivision: currentDivision);
+        if (parsed.isNotEmpty) return parsed;
       }
     } catch (_) {
       // ignore and fall back to heuristic extraction
