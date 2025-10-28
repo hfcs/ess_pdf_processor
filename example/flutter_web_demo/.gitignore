@@ -1,0 +1,4 @@
+# Ignore generated local debug file for the demo
+# This file may be created by the helper script:
+#   ./scripts/generate_debug_js.sh
+web/debug.js
