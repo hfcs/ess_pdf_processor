@@ -1,5 +1,6 @@
 import 'dart:html' as html;
 import 'dart:typed_data';
+import 'dart:async';
 import 'dart:js_interop' as jsi;
 import 'package:js/js.dart' show JS;
 import 'dart:js_util' as jsu;
@@ -18,6 +19,7 @@ Future<String> extractWithPdfJsWeb(Uint8List bytes) async {
   } catch (e) {
     throw Exception('extractPdfArrayBuffer not found on window; ensure web/pdf_extract.js and pdfjs are loaded');
   }
+  // Use js_util.promiseToFuture to convert the JS promise to a Dart Future.
   final result = await jsu.promiseToFuture<List>(promise);
   // Debug logging: enabled only in debug builds via assert side-effect.
   var _pdfjsDebug = false;
@@ -42,20 +44,40 @@ Future<String> extractWithPdfJsWeb(Uint8List bytes) async {
   String lastStage = '';
   for (final item in result) {
     try {
-      final t = jsu.getProperty(item, 'type');
+      // If the item is a plain string, add it directly.
+      if (item is String) {
+        linesList.add(item);
+        continue;
+      }
+
+      // Otherwise treat it as a JS object with the expected fields. We use
+      // static interop via a minimal wrapper type so we can access fields
+      // without js_util.
+      final jsObj = item as Object;
+      // Access properties via JS interop by creating a dynamic view.
+      String? t;
+      try {
+        t = (jsObj as dynamic).type as String?;
+      } catch (_) {
+        t = null;
+      }
+
       if (t == 'meta') {
-        final meta = jsu.getProperty(item, 'meta');
-        if (meta == 'division') {
-          final division = jsu.getProperty(item, 'division')?.toString() ?? '';
+        String? metaVal;
+        try {
+          metaVal = (jsObj as dynamic).meta as String?;
+        } catch (_) {
+          metaVal = null;
+        }
+        if (metaVal == 'division') {
+          final division = ((jsObj as dynamic).division as String?) ?? '';
           if (division.isNotEmpty) {
-            // Emit a division header line that the Dart parser recognizes
             lastDivision = division;
             linesList.add('$division -- Overall Stage Results');
           }
-        } else if (meta == 'stage') {
-          final stage = jsu.getProperty(item, 'stage')?.toString() ?? '';
+        } else if (metaVal == 'stage') {
+          final stage = ((jsObj as dynamic).stage as String?) ?? '';
           if (stage.isNotEmpty) {
-            // Normalize stage to 'Stage N' format if possible
             final m = RegExp(r"(Stage\s*\d+)", caseSensitive: false).firstMatch(stage);
             final stageLine = m != null ? m.group(1) : stage;
             lastStage = stageLine ?? '';
@@ -64,11 +86,10 @@ Future<String> extractWithPdfJsWeb(Uint8List bytes) async {
         }
         continue;
       }
+
       if (t == 'row') {
-        // Row objects may also carry division/stage fields; ensure we emit
-        // header lines if they differ from the last seen values.
-        final division = jsu.getProperty(item, 'division')?.toString() ?? '';
-        final stage = jsu.getProperty(item, 'stage')?.toString() ?? '';
+        final division = ((jsObj as dynamic).division as String?) ?? '';
+        final stage = ((jsObj as dynamic).stage as String?) ?? '';
         if (division.isNotEmpty && division != lastDivision) {
           lastDivision = division;
           linesList.add('$division -- Overall Stage Results');
@@ -81,12 +102,12 @@ Future<String> extractWithPdfJsWeb(Uint8List bytes) async {
             linesList.add(stageLine);
           }
         }
-        final line = jsu.getProperty(item, 'line');
+        final line = ((jsObj as dynamic).line as String?);
         if (line != null) linesList.add(line.toString());
         continue;
       }
     } catch (_) {
-      // Not a JS object with properties; fall-through to toString
+      // fall through to toString
     }
     try {
       linesList.add(item.toString());
