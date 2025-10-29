@@ -1,14 +1,14 @@
-import 'dart:html' as html;
+// Do not import `dart:html` here so this library remains usable outside the web
+// platform. Use print() for debug logging instead.
 import 'dart:typed_data';
 import 'dart:async';
 import 'dart:js_interop' as jsi;
-import 'package:js/js.dart' show JS;
 import 'dart:js_util' as jsu;
 
 /// Calls the browser-side `window.extractPdfArrayBuffer` (provided by
 /// `web/pdf_extract.js` and pdf.js) and returns the extracted text (joined
 /// lines separated by \n).
-@JS('extractPdfArrayBuffer')
+@jsi.JS('extractPdfArrayBuffer')
 external jsi.JSPromise _extractPdfArrayBuffer(Object buffer);
 
 Future<String> extractWithPdfJsWeb(Uint8List bytes) async {
@@ -26,11 +26,11 @@ Future<String> extractWithPdfJsWeb(Uint8List bytes) async {
   assert((_pdfjsDebug = true));
   if (_pdfjsDebug) {
     try {
-      html.window.console.log('pdfjs: dart received result length=' + result.length.toString());
+      // Use print so logging works across platforms and test runners.
+      print('pdfjs: dart received result length=' + result.length.toString());
       if (result.isNotEmpty) {
-        // Log a short preview of the first item for debugging
         try {
-          html.window.console.log('pdfjs: dart first item preview: ' + result.first.toString());
+          print('pdfjs: dart first item preview: ' + result.first.toString());
         } catch (_) {}
       }
     } catch (_) {}
