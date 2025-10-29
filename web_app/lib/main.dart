@@ -1,3 +1,8 @@
+// Suppress deprecated dart:html usage warning in this small web-only demo.
+// The web app uses browser FileReader and Blob APIs; migrating to
+// `package:web` and `dart:js_interop` is a future improvement but
+// out-of-scope for this quick fix.
+// ignore_for_file: deprecated_member_use
 import 'dart:html' as html;
 import 'dart:typed_data';
 
@@ -120,7 +125,9 @@ class _DemoHomeState extends State<DemoHome> {
     }
     final blob = html.Blob([buffer.toString()], 'text/csv');
     final url = html.Url.createObjectUrlFromBlob(blob);
-    final anchor = html.AnchorElement(href: url)
+    // Create an anchor and click it to trigger download. Keep this inline
+    // to avoid an unused-local-variable analyzer warning.
+    html.AnchorElement(href: url)
       ..setAttribute('download', 'extracted_rows.csv')
       ..click();
     html.Url.revokeObjectUrl(url);
