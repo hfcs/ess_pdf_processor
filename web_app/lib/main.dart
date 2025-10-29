@@ -1,9 +1,4 @@
-// Suppress deprecated dart:html usage warning in this small web-only demo.
-// The web app uses browser FileReader and Blob APIs; migrating to
-// `package:web` and `dart:js_interop` is a future improvement but
-// out-of-scope for this quick fix.
-// ignore_for_file: deprecated_member_use
-import 'dart:html' as html;
+import 'package:universal_html/html.dart' as html;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
