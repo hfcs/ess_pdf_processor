@@ -1,25 +1,18 @@
-// Do not import `dart:html` here so this library remains usable outside the web
-// platform. Use print() for debug logging instead.
+import 'dart:html' as html;
 import 'dart:typed_data';
 import 'dart:async';
-import 'dart:js_interop' as jsi;
+// Note: we avoid heavy use of dart:js_interop here and use js_util for
+// promise conversion and property access for broader compatibility.
 import 'dart:js_util' as jsu;
 
 /// Calls the browser-side `window.extractPdfArrayBuffer` (provided by
 /// `web/pdf_extract.js` and pdf.js) and returns the extracted text (joined
 /// lines separated by \n).
-@jsi.JS('extractPdfArrayBuffer')
-external jsi.JSPromise _extractPdfArrayBuffer(Object buffer);
-
 Future<String> extractWithPdfJsWeb(Uint8List bytes) async {
   final buffer = bytes.buffer;
-  jsi.JSPromise promise;
-  try {
-    promise = _extractPdfArrayBuffer(buffer);
-  } catch (e) {
-    throw Exception('extractPdfArrayBuffer not found on window; ensure web/pdf_extract.js and pdfjs are loaded');
-  }
-  // Use js_util.promiseToFuture to convert the JS promise to a Dart Future.
+  final has = jsu.hasProperty(html.window, 'extractPdfArrayBuffer');
+  if (!has) throw Exception('extractPdfArrayBuffer not found on window; ensure web/pdf_extract.js and pdfjs are loaded');
+  final promise = jsu.callMethod(html.window, 'extractPdfArrayBuffer', [buffer]);
   final result = await jsu.promiseToFuture<List>(promise);
   // Debug logging: enabled only in debug builds via assert side-effect.
   var _pdfjsDebug = false;
