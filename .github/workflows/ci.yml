@@ -118,6 +118,10 @@ jobs:
         working-directory: web_app
 
   deploy_web:
+    # Only run deploy when a Firebase service account is configured in repo secrets.
+    # This avoids failing the workflow when the repository doesn't have the
+    # `FIREBASE_SERVICE_ACCOUNT` secret (for forks or community CI runs).
+    if: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' }}
     runs-on: ubuntu-latest
     needs: flutter_example
     steps:
