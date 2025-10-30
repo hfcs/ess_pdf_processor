@@ -125,11 +125,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Skip deploy when no Firebase secret
-        if: ${{ secrets.FIREBASE_SERVICE_ACCOUNT == '' }}
+      - name: Check for FIREBASE_SERVICE_ACCOUNT secret
+        id: check_secret
         run: |
-          echo "FIREBASE_SERVICE_ACCOUNT is not set — skipping Firebase deploy."
-          echo "If you expect deploys, add the FIREBASE_SERVICE_ACCOUNT secret in repo Settings → Secrets & variables → Actions."
+          if [ -z "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" ]; then
+            echo "has_secret=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_secret=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Set up Flutter
         uses: flutter-actions/setup-flutter@v2
@@ -144,7 +147,7 @@ jobs:
         working-directory: web_app
 
       - name: Deploy to Firebase Hosting
-        if: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' }}
+        if: ${{ steps.check_secret.outputs.has_secret == 'true' }}
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
