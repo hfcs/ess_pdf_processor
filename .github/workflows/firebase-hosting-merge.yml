@@ -11,7 +11,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: flutter build web --release
+
+      - name: Set up Flutter
+        uses: flutter-actions/setup-flutter@v2
+        with:
+          flutter-version: 'stable'
+
+      - name: Get example packages
+        run: flutter pub get
+        working-directory: web_app
+
+      - name: Build Flutter web (example)
+        run: flutter build web --release
+        working-directory: web_app
+
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
