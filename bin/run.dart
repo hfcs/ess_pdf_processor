@@ -8,7 +8,7 @@ import 'package:ess_pdf_processor/parser/text_parser.dart' show parseTextToRows;
 
 Future<void> main(List<String> args) async {
   if (args.length < 2) {
-    print('Usage: dart run bin/run.dart <input.pdf> <output.csv>');
+    print('Usage: dart run bin/run.dart <input.pdf> <output.csv> [--pdfjs] [--shooter-list <file>] [--force-fallback]');
     exit(2);
   }
 
@@ -27,6 +27,7 @@ Future<void> main(List<String> args) async {
   // Optionally prefer pdf.js Node extractor when --pdfjs flag is provided.
   final usePdfJs = args.contains('--pdfjs');
   String? shooterListPath;
+  final forceFallback = args.contains('--force-fallback');
   if (args.contains('--shooter-list')) {
     final idx = args.indexOf('--shooter-list');
     if (idx >= 0 && idx + 1 < args.length) shooterListPath = args[idx + 1];
@@ -43,8 +44,8 @@ Future<void> main(List<String> args) async {
       print('pdf.js extraction failed: $e');
       rows = await parser.parse();
     }
-  } else {
-    rows = await parser.parse();
+    } else {
+    rows = await parser.parse(forceFallback: forceFallback);
   }
   // If a shooter list was provided via CLI, parse and apply mapping
   if (shooterListPath != null) {

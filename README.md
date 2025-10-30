@@ -11,6 +11,21 @@ This project supports two robust PDF→text extraction routes that decode embedd
 Notes and recommendations:
 - For most users wanting a web-first experience, use the browser-side PDF.js extractor (privacy-preserving — files never leave the user's machine) and then parse coordinates into rows in Dart.
 - For CLI or CI usage, `pdftotext` (system) and Node/pdf.js are both valid options; the CLI prefers `pdftotext` when available, and falls back to the Node/pdf.js path if `--pdfjs` is passed.
+ - For CLI or CI usage, `pdftotext` (system) and Node/pdf.js are both valid options; the CLI prefers `pdftotext` when available, and falls back to the Node/pdf.js path if `--pdfjs` is passed.
+
+Testing & forcing the heuristic fallback
+--------------------------------------
+
+The parser prefers `pdftotext` when available, but there is a robust heuristic fallback that extracts tokens from PDF content streams. For testing and for environments that don't have `pdftotext`, you can force the heuristic fallback in two ways:
+
+- Programmatic (tests): `PdfDartParser.parse(..., forceFallback: true)` — this named parameter skips calling `pdftotext` and directly runs the heuristic extraction. The test suite uses this flag to exercise fallback logic without relying on system binaries.
+- CLI: pass `--force-fallback` to the CLI to skip the `pdftotext` path and use the heuristic extraction when running the `bin/run.dart` tool. Example:
+
+```bash
+dart run bin/run.dart input.pdf out.csv --force-fallback
+```
+
+We added a unit test (`test/pdf_dart_parser_force_flag_test.dart`) demonstrating forcing the fallback while also mocking a successful `pdftotext` runner to ensure the flag is respected.
 
 See the `web/` folder and `scripts/` for example extractors and the `test/pdfjs_vs_pdftotext_test.dart` parity test.
 

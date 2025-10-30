@@ -14,7 +14,16 @@ class PdfDartParser {
   /// Parse the PDF using the pure-Dart `pdf` package when available.
   /// If the package extraction fails, fall back to a heuristic text extraction
   /// from the raw PDF bytes (best-effort) and then apply the same layout regex.
-  Future<List<ResultRow>> parse({String defaultDivision = 'UNKNOWN'}) async {
+  /// Parse the PDF. `processRunner` may be injected for testing to simulate
+  /// an external `pdftotext` binary. The runner signature matches
+  /// `Process.run` return type: Future<ProcessResult> Function(String, List<String>)
+  Future<List<ResultRow>> parse({String defaultDivision = 'UNKNOWN',
+    Future<ProcessResult> Function(String, List<String>)? processRunner,
+    /// When true, skip attempting to call an external `pdftotext` binary
+    /// and immediately use the heuristic fallback. This is intended for
+    /// testing and for environments where `pdftotext` is unavailable.
+    bool forceFallback = false,
+  }) async {
     final rows = <ResultRow>[];
 
     String currentDivision = defaultDivision;
@@ -26,15 +35,19 @@ class PdfDartParser {
 
     // First, if `pdftotext` is available on the system, prefer it because it
     // produces reliable layout-preserved text which our regex expects.
-    try {
-      final pr = await Process.run('pdftotext', ['-layout', '-enc', 'UTF-8', file.path, '-']);
+    if (!forceFallback) {
+      try {
+        final runner = processRunner ??
+            ((String cmd, List<String> args) => Process.run(cmd, args));
+        final pr = await runner('pdftotext', ['-layout', '-enc', 'UTF-8', file.path, '-']);
         if (pr.exitCode == 0) {
-        final outText = pr.stdout as String;
-        final parsed = parseTextToRows(outText, defaultDivision: currentDivision);
-        if (parsed.isNotEmpty) return parsed;
+          final outText = pr.stdout as String;
+          final parsed = parseTextToRows(outText, defaultDivision: currentDivision);
+          if (parsed.isNotEmpty) return parsed;
+        }
+      } catch (_) {
+        // ignore and fall back to heuristic extraction
       }
-    } catch (_) {
-      // ignore and fall back to heuristic extraction
     }
 
     // Heuristic fallback: extract literal text tokens from PDF content streams.
