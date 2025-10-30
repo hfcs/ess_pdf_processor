@@ -117,49 +117,8 @@ jobs:
         run: flutter test
         working-directory: web_app
 
-  deploy_web:
-    # Only run deploy when a Firebase service account is configured in repo secrets.
-    runs-on: ubuntu-latest
-    needs: flutter_example
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Check for FIREBASE_SERVICE_ACCOUNT secret
-        id: check_secret
-        run: |
-          if [ -z "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" ]; then
-            echo "has_secret=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_secret=true" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Set up Flutter
-        uses: flutter-actions/setup-flutter@v2
-        with:
-          channel: 'stable'
-
-      - name: Show Flutter info
-        run: flutter --version
-
-      - name: Build Flutter web (example)
-        run: flutter build web --release
-        working-directory: web_app
-
-      - name: Deploy to Firebase Hosting
-        if: ${{ steps.check_secret.outputs.has_secret == 'true' }}
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
-          projectId: 'ess-pdf-processor'
-          # Be explicit about which folder to deploy. The Flutter build writes
-          # static assets to `web_app/build/web`; explicitly set the entryPoint
-          # so the deploy action doesn't accidentally deploy an empty directory.
-          entryPoint: 'web_app/build/web'
-
-      - name: Show built web_app files (for debugging)
-        if: ${{ steps.check_secret.outputs.has_secret == 'true' }}
-        run: |
-          echo "Listing web_app/build/web contents (if present):"
-          ls -la web_app/build/web || echo "directory not present"
+  # The Firebase Hosting deploy step is handled by the Firebase-generated
+  # workflows (`.github/workflows/firebase-hosting-merge.yml` and
+  # `.github/workflows/firebase-hosting-pull-request.yml`). We avoid duplicating
+  # deploy steps here to prevent accidental double-deploys and to keep CI logs
+  # clear. See those generated workflows for deploy behavior.
