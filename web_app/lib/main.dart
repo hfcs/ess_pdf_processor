@@ -7,6 +7,7 @@ import 'package:ess_pdf_processor/parser/pdfjs_web_extractor.dart';
 import 'package:ess_pdf_processor/parser/text_parser.dart';
 import 'package:ess_pdf_processor/parser/shooter_list_text_parser.dart';
 import 'package:ess_pdf_processor/models/result_row.dart';
+import 'dart:js_util' as jsu;
 
 void main() {
   runApp(const DemoApp());
@@ -35,8 +36,15 @@ class _DemoHomeState extends State<DemoHome> {
   List<ResultRow> _resultRows = [];
   bool _loading = false;
   Map<int, String> _shooterListMap = {};
+  String _lastError = '';
 
   Future<void> _pickAndExtract() async {
+    // Enable debug logging for the embedded pdf.js extractor so errors and
+    // progress are visible in the browser console. This helps diagnose why
+    // "nothing happens" on file load in some environments.
+    try {
+      jsu.setProperty(html.window, '__ESS_DEBUG__', true);
+    } catch (_) {}
     final input = html.FileUploadInputElement();
     input.accept = '.pdf';
     input.click();
@@ -74,13 +82,13 @@ class _DemoHomeState extends State<DemoHome> {
         throw Exception('Unsupported FileReader.result type: ${result.runtimeType}');
       }
 
-      try {
-        // Add a timeout around the JS/pdf.js extraction so the UI doesn't hang
-        // if the promise never resolves for some reason (network blocked, pdf.js error).
-        final extracted = await extractWithPdfJsWeb(bytes).timeout(
-          const Duration(seconds: 30),
-          onTimeout: () => throw Exception('PDF extraction timed out (30s) - check console for pdf.js errors'),
-        );
+        try {
+          // Add a timeout around the JS/pdf.js extraction so the UI doesn't hang
+          // if the promise never resolves for some reason (network blocked, pdf.js error).
+          final extracted = await extractWithPdfJsWeb(bytes).timeout(
+            const Duration(seconds: 30),
+            onTimeout: () => throw Exception('PDF extraction timed out (30s) - check console for pdf.js errors'),
+          );
 
         final parsed = parseTextToRows(extracted, defaultDivision: 'UNKNOWN');
         // Apply shooter-list mapping only when we have an explicit mapping
@@ -98,13 +106,19 @@ class _DemoHomeState extends State<DemoHome> {
           // incorrectly overwrite it with 'Overall').
         }
         setState(() => _resultRows = parsed);
-      } catch (e) {
-        setState(() => _resultRows = []);
-        try { html.window.console.error('Demo app: extraction error: $e'); } catch (_) {}
-      }
+        } catch (e) {
+          setState(() {
+            _resultRows = [];
+            _lastError = 'Extraction error: $e';
+          });
+          try { html.window.console.error('Demo app: extraction error: $e'); } catch (_) {}
+        }
     } catch (e) {
       // File read failed or timed out
-      setState(() => _resultRows = []);
+      setState(() {
+        _resultRows = [];
+        _lastError = 'File read error: $e';
+      });
       try { html.window.console.error('Demo app: file read error: $e'); } catch (_) {}
     } finally {
       setState(() => _loading = false);
@@ -129,6 +143,9 @@ class _DemoHomeState extends State<DemoHome> {
   }
 
   Future<void> _pickAndLoadShooterList() async {
+    try {
+      jsu.setProperty(html.window, '__ESS_DEBUG__', true);
+    } catch (_) {}
     final input = html.FileUploadInputElement();
     input.accept = '.pdf';
     input.click();
@@ -168,10 +185,11 @@ class _DemoHomeState extends State<DemoHome> {
           onTimeout: () => throw Exception('PDF extraction timed out (30s) - check console for pdf.js errors'),
         );
 
-  final map = parseShooterListFromText(extracted);
+        final map = parseShooterListFromText(extracted);
         // Update shooter-list map and apply to any already-loaded results.
         setState(() {
           _shooterListMap = map;
+          _lastError = '';
           // Apply mapping to already-loaded rows when we have explicit entries
           for (final r in _resultRows) {
             if (_shooterListMap.containsKey(r.competitorNumber)) {
@@ -185,7 +203,10 @@ class _DemoHomeState extends State<DemoHome> {
           }
         });
       } catch (e) {
-        setState(() => _shooterListMap = {});
+        setState(() {
+          _shooterListMap = {};
+          _lastError = 'Shooter-list extraction error: $e';
+        });
         try { html.window.console.error('Demo app: shooter-list extraction error: $e'); } catch (_) {}
       }
     } catch (e) {
@@ -246,6 +267,12 @@ class _DemoHomeState extends State<DemoHome> {
                     ],
             ),
             const SizedBox(height: 8),
+            // Show last error (if any) so users see problems in the UI.
+            if (_lastError.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6.0),
+                child: Text(_lastError, style: TextStyle(color: Colors.red.shade700)),
+              ),
             ElevatedButton.icon(
               onPressed: _resultRows.isEmpty ? null : _exportCsv,
               icon: const Icon(Icons.download),
