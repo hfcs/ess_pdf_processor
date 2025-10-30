@@ -153,3 +153,13 @@ jobs:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
           projectId: 'ess-pdf-processor'
+          # Be explicit about which folder to deploy. The Flutter build writes
+          # static assets to `web_app/build/web`; explicitly set the entryPoint
+          # so the deploy action doesn't accidentally deploy an empty directory.
+          entryPoint: 'web_app/build/web'
+
+      - name: Show built web_app files (for debugging)
+        if: ${{ steps.check_secret.outputs.has_secret == 'true' }}
+        run: |
+          echo "Listing web_app/build/web contents (if present):"
+          ls -la web_app/build/web || echo "directory not present"
