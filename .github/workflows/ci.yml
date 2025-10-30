@@ -65,11 +65,14 @@ jobs:
       - name: Convert VM coverage to LCOV
         run: |
           # format_coverage lives in the coverage package
+          # Newer coverage versions expect --package (root dir) instead of the
+          # deprecated --packages .packages file which is not present on modern
+          # Dart SDK installs. Use --package=. to point at the repository root.
           dart pub global run coverage:format_coverage \
             --lcov \
             --in=coverage \
             --out=coverage/lcov.info \
-            --packages=.packages \
+            --package=. \
             --report-on=lib
 
       - name: Install lcov (genhtml)
