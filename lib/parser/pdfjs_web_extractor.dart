@@ -43,14 +43,15 @@ Future<String> extractWithPdfJsWeb(Uint8List bytes) async {
         continue;
       }
 
-      // Otherwise treat it as a JS object with the expected fields. We use
-      // static interop via a minimal wrapper type so we can access fields
-      // without js_util.
+      // Otherwise treat it as a JS object with the expected fields.
       final jsObj = item as Object;
-      // Access properties via JS interop by creating a dynamic view.
+
       String? t;
       try {
-        t = (jsObj as dynamic).type as String?;
+        if (jsu.hasProperty(jsObj, 'type')) {
+          final tp = jsu.getProperty(jsObj, 'type');
+          if (tp != null) t = tp.toString();
+        }
       } catch (_) {
         t = null;
       }
@@ -58,18 +59,21 @@ Future<String> extractWithPdfJsWeb(Uint8List bytes) async {
       if (t == 'meta') {
         String? metaVal;
         try {
-          metaVal = (jsObj as dynamic).meta as String?;
+          if (jsu.hasProperty(jsObj, 'meta')) {
+            final mv = jsu.getProperty(jsObj, 'meta');
+            if (mv != null) metaVal = mv.toString();
+          }
         } catch (_) {
           metaVal = null;
         }
         if (metaVal == 'division') {
-          final division = ((jsObj as dynamic).division as String?) ?? '';
+          final division = jsu.hasProperty(jsObj, 'division') ? (jsu.getProperty(jsObj, 'division')?.toString() ?? '') : '';
           if (division.isNotEmpty) {
             lastDivision = division;
             linesList.add('$division -- Overall Stage Results');
           }
         } else if (metaVal == 'stage') {
-          final stage = ((jsObj as dynamic).stage as String?) ?? '';
+          final stage = jsu.hasProperty(jsObj, 'stage') ? (jsu.getProperty(jsObj, 'stage')?.toString() ?? '') : '';
           if (stage.isNotEmpty) {
             final m = RegExp(r"(Stage\s*\d+)", caseSensitive: false).firstMatch(stage);
             final stageLine = m != null ? m.group(1) : stage;
@@ -81,8 +85,8 @@ Future<String> extractWithPdfJsWeb(Uint8List bytes) async {
       }
 
       if (t == 'row') {
-        final division = ((jsObj as dynamic).division as String?) ?? '';
-        final stage = ((jsObj as dynamic).stage as String?) ?? '';
+        final division = jsu.hasProperty(jsObj, 'division') ? (jsu.getProperty(jsObj, 'division')?.toString() ?? '') : '';
+        final stage = jsu.hasProperty(jsObj, 'stage') ? (jsu.getProperty(jsObj, 'stage')?.toString() ?? '') : '';
         if (division.isNotEmpty && division != lastDivision) {
           lastDivision = division;
           linesList.add('$division -- Overall Stage Results');
@@ -95,7 +99,7 @@ Future<String> extractWithPdfJsWeb(Uint8List bytes) async {
             linesList.add(stageLine);
           }
         }
-        final line = ((jsObj as dynamic).line as String?);
+        final line = jsu.hasProperty(jsObj, 'line') ? (jsu.getProperty(jsObj, 'line')?.toString()) : null;
         if (line != null) linesList.add(line.toString());
         continue;
       }

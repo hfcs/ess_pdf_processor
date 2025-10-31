@@ -42,9 +42,9 @@ class _DemoHomeState extends State<DemoHome> {
     // Enable debug logging for the embedded pdf.js extractor so errors and
     // progress are visible in the browser console. This helps diagnose why
     // "nothing happens" on file load in some environments.
-    try {
-      jsu.setProperty(html.window, '__ESS_DEBUG__', true);
-    } catch (_) {}
+    // Do not force-enable debug mode here. Prefer using the optional
+    // `web/debug.js` helper (which sets window.__ESS_DEBUG__ = true) so
+    // developers can opt-in to verbose logging in the browser.
     final input = html.FileUploadInputElement();
     input.accept = '.pdf';
     input.click();
@@ -90,22 +90,56 @@ class _DemoHomeState extends State<DemoHome> {
             onTimeout: () => throw Exception('PDF extraction timed out (30s) - check console for pdf.js errors'),
           );
 
-        final parsed = parseTextToRows(extracted, defaultDivision: 'UNKNOWN');
-        // Apply shooter-list mapping only when we have an explicit mapping
-        for (final r in parsed) {
-          if (_shooterListMap.containsKey(r.competitorNumber)) {
-            final token = _shooterListMap[r.competitorNumber] ?? '';
-            if (token == 'GM' || token.isEmpty) {
-              r.classification = 'Overall';
-            } else {
-              r.classification = token;
+        try {
+          // Log a short preview of the extracted text so devtools can show
+          // what pdf.js produced (helps debug parsing mismatches).
+          try {
+            // Only emit verbose debug logs when the page explicitly enables
+            // debug mode (for example via web/debug.js which sets
+            // `window.__ESS_DEBUG__ = true`). This avoids noisy console
+            // output in normal usage.
+            final debugEnabled = jsu.hasProperty(html.window, '__ESS_DEBUG__') && jsu.getProperty(html.window, '__ESS_DEBUG__') == true;
+            if (debugEnabled) {
+              final preview = extracted.length > 400 ? extracted.substring(0, 400) + '...' : extracted;
+              html.window.console.log('Demo app: extracted preview: ' + preview);
+              html.window.console.log('Demo app: extracted lines=' + extracted.split(RegExp(r"\r?\n")).length.toString());
             }
+          } catch (_) {}
+
+          final parsed = parseTextToRows(extracted, defaultDivision: 'UNKNOWN');
+          if (parsed.isEmpty) {
+            // Make parsing issues visible in the UI so users aren't left wondering
+            // why nothing appears after a successful pdf.js extraction.
+            setState(() { _lastError = 'No rows parsed from extraction. See console for extracted preview.'; _resultRows = []; });
+          } else {
+            // Apply shooter-list mapping only when we have an explicit mapping
+            for (final r in parsed) {
+              if (_shooterListMap.containsKey(r.competitorNumber)) {
+                final token = _shooterListMap[r.competitorNumber] ?? '';
+                if (token == 'GM' || token.isEmpty) {
+                  r.classification = 'Overall';
+                } else {
+                  r.classification = token;
+                }
+              }
+            }
+            try {
+              html.window.console.log('Demo app: parsed rows=' + parsed.length.toString());
+            } catch (_) {}
+            setState(() {
+              _resultRows = parsed;
+              _lastError = '';
+            });
           }
-          // If we don't have an entry for this competitor, leave the
-          // classification as-is (so loading a shooter-list later won't
-          // incorrectly overwrite it with 'Overall').
+        } catch (e) {
+          // If parseTextToRows itself throws, surface the error into the UI
+          setState(() {
+            _resultRows = [];
+            _lastError = 'Parsing error: $e';
+          });
+          try { html.window.console.error('Demo app: parsing error: $e'); } catch (_) {}
         }
-        setState(() => _resultRows = parsed);
+        // No further action here; parsing and mapping handled above.
         } catch (e) {
           setState(() {
             _resultRows = [];
@@ -143,9 +177,8 @@ class _DemoHomeState extends State<DemoHome> {
   }
 
   Future<void> _pickAndLoadShooterList() async {
-    try {
-      jsu.setProperty(html.window, '__ESS_DEBUG__', true);
-    } catch (_) {}
+    // Do not force-enable debug mode here; rely on the optional
+    // web/debug.js helper when debugging in the browser.
     final input = html.FileUploadInputElement();
     input.accept = '.pdf';
     input.click();
