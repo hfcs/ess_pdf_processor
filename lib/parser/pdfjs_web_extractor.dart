@@ -1,19 +1,42 @@
-import 'dart:html' as html;
 import 'dart:typed_data';
 import 'dart:async';
-// Note: we avoid heavy use of dart:js_interop here and use js_util for
-// promise conversion and property access for broader compatibility.
-import 'dart:js_util' as jsu;
+import 'package:js/js.dart';
+
+/// Bind the browser-side `window.extractPdfArrayBuffer` function defined in
+/// `web/pdf_extract.js`/pdf.js, returning a JavaScript Promise. We convert the
+/// Promise to a Dart Future below using a Completer and `allowInterop`.
+@JS('window.extractPdfArrayBuffer')
+external Object? _extractPdfArrayBuffer(Object buffer);
 
 /// Calls the browser-side `window.extractPdfArrayBuffer` (provided by
 /// `web/pdf_extract.js` and pdf.js) and returns the extracted text (joined
 /// lines separated by \n).
 Future<String> extractWithPdfJsWeb(Uint8List bytes) async {
   final buffer = bytes.buffer;
-  final has = jsu.hasProperty(html.window, 'extractPdfArrayBuffer');
-  if (!has) throw Exception('extractPdfArrayBuffer not found on window; ensure web/pdf_extract.js and pdfjs are loaded');
-  final promise = jsu.callMethod(html.window, 'extractPdfArrayBuffer', [buffer]);
-  final result = await jsu.promiseToFuture<List>(promise);
+  final promise = _extractPdfArrayBuffer(buffer);
+  if (promise == null) throw Exception('extractPdfArrayBuffer not found on window; ensure web/pdf_extract.js and pdfjs are loaded');
+
+  // Convert the JS Promise to a Dart Future<List> by wiring its `then`/`catch`.
+  final completer = Completer<List>();
+  try {
+    // The JS Promise exposes a `then` method; call it with Dart functions
+    // wrapped via `allowInterop` so V8 can invoke them.
+    final p = promise as dynamic;
+    p.then(allowInterop((res) {
+      try {
+        // Ensure result is converted to a Dart List if possible.
+        completer.complete(List.from(res));
+      } catch (_) {
+        completer.complete(res as List);
+      }
+    }), allowInterop((err) {
+      completer.completeError(err ?? 'Promise rejected');
+    }));
+  } catch (e) {
+    throw Exception('Error while awaiting extractPdfArrayBuffer promise: $e');
+  }
+
+  final result = await completer.future;
   // Debug logging: enabled only in debug builds via assert side-effect.
   var _pdfjsDebug = false;
   assert((_pdfjsDebug = true));
@@ -44,14 +67,12 @@ Future<String> extractWithPdfJsWeb(Uint8List bytes) async {
       }
 
       // Otherwise treat it as a JS object with the expected fields.
-      final jsObj = item as Object;
+      final jsObj = item as dynamic;
 
       String? t;
       try {
-        if (jsu.hasProperty(jsObj, 'type')) {
-          final tp = jsu.getProperty(jsObj, 'type');
-          if (tp != null) t = tp.toString();
-        }
+        final tp = jsObj.type;
+        if (tp != null) t = tp.toString();
       } catch (_) {
         t = null;
       }
@@ -59,21 +80,33 @@ Future<String> extractWithPdfJsWeb(Uint8List bytes) async {
       if (t == 'meta') {
         String? metaVal;
         try {
-          if (jsu.hasProperty(jsObj, 'meta')) {
-            final mv = jsu.getProperty(jsObj, 'meta');
-            if (mv != null) metaVal = mv.toString();
-          }
+          final mv = jsObj.meta;
+          if (mv != null) metaVal = mv.toString();
         } catch (_) {
           metaVal = null;
         }
         if (metaVal == 'division') {
-          final division = jsu.hasProperty(jsObj, 'division') ? (jsu.getProperty(jsObj, 'division')?.toString() ?? '') : '';
+          final division = () {
+            try {
+              final d = jsObj.division;
+              return d?.toString() ?? '';
+            } catch (_) {
+              return '';
+            }
+          }();
           if (division.isNotEmpty) {
             lastDivision = division;
             linesList.add('$division -- Overall Stage Results');
           }
         } else if (metaVal == 'stage') {
-          final stage = jsu.hasProperty(jsObj, 'stage') ? (jsu.getProperty(jsObj, 'stage')?.toString() ?? '') : '';
+          final stage = () {
+            try {
+              final s = jsObj.stage;
+              return s?.toString() ?? '';
+            } catch (_) {
+              return '';
+            }
+          }();
           if (stage.isNotEmpty) {
             final m = RegExp(r"(Stage\s*\d+)", caseSensitive: false).firstMatch(stage);
             final stageLine = m != null ? m.group(1) : stage;
@@ -85,8 +118,22 @@ Future<String> extractWithPdfJsWeb(Uint8List bytes) async {
       }
 
       if (t == 'row') {
-        final division = jsu.hasProperty(jsObj, 'division') ? (jsu.getProperty(jsObj, 'division')?.toString() ?? '') : '';
-        final stage = jsu.hasProperty(jsObj, 'stage') ? (jsu.getProperty(jsObj, 'stage')?.toString() ?? '') : '';
+        final division = () {
+          try {
+            final d = jsObj.division;
+            return d?.toString() ?? '';
+          } catch (_) {
+            return '';
+          }
+        }();
+        final stage = () {
+          try {
+            final s = jsObj.stage;
+            return s?.toString() ?? '';
+          } catch (_) {
+            return '';
+          }
+        }();
         if (division.isNotEmpty && division != lastDivision) {
           lastDivision = division;
           linesList.add('$division -- Overall Stage Results');
@@ -99,7 +146,14 @@ Future<String> extractWithPdfJsWeb(Uint8List bytes) async {
             linesList.add(stageLine);
           }
         }
-        final line = jsu.hasProperty(jsObj, 'line') ? (jsu.getProperty(jsObj, 'line')?.toString()) : null;
+        final line = () {
+          try {
+            final l = jsObj.line;
+            return l?.toString();
+          } catch (_) {
+            return null;
+          }
+        }();
         if (line != null) linesList.add(line.toString());
         continue;
       }
