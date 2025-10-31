@@ -7,7 +7,7 @@ import 'package:ess_pdf_processor/parser/pdfjs_web_extractor.dart';
 import 'package:ess_pdf_processor/parser/text_parser.dart';
 import 'package:ess_pdf_processor/parser/shooter_list_text_parser.dart';
 import 'package:ess_pdf_processor/models/result_row.dart';
-import 'dart:js_util' as jsu;
+// Access window properties via dynamic interop instead of `dart:js_util`.
 
 void main() {
   runApp(const DemoApp());
@@ -97,8 +97,15 @@ class _DemoHomeState extends State<DemoHome> {
             // Only emit verbose debug logs when the page explicitly enables
             // debug mode (for example via web/debug.js which sets
             // `window.__ESS_DEBUG__ = true`). This avoids noisy console
-            // output in normal usage.
-            final debugEnabled = jsu.hasProperty(html.window, '__ESS_DEBUG__') && jsu.getProperty(html.window, '__ESS_DEBUG__') == true;
+            // output in normal usage. Access the flag via dynamic interop.
+            final debugEnabled = () {
+              try {
+                final w = html.window as dynamic;
+                return w.__ESS_DEBUG__ == true;
+              } catch (_) {
+                return false;
+              }
+            }();
             if (debugEnabled) {
               final preview = extracted.length > 400 ? extracted.substring(0, 400) + '...' : extracted;
               html.window.console.log('Demo app: extracted preview: ' + preview);
