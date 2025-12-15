@@ -17,6 +17,25 @@ Future<void> main(List<String> args) async {
   final output = args[1];
   // If --fetch-web is provided, input is treated as a URL to scrape
   final fetchWeb = args.contains('--fetch-web');
+  int rateLimitSecs = 2;
+  int timeoutSecs = 30;
+  int maxRetries = 3;
+  bool headless = false;
+  if (args.contains('--rate-limit')) {
+    final i = args.indexOf('--rate-limit');
+    if (i >= 0 && i + 1 < args.length) rateLimitSecs = int.tryParse(args[i + 1]) ?? rateLimitSecs;
+  }
+  if (args.contains('--timeout')) {
+    final i = args.indexOf('--timeout');
+    if (i >= 0 && i + 1 < args.length) timeoutSecs = int.tryParse(args[i + 1]) ?? timeoutSecs;
+  }
+  if (args.contains('--max-retries')) {
+    final i = args.indexOf('--max-retries');
+    if (i >= 0 && i + 1 < args.length) maxRetries = int.tryParse(args[i + 1]) ?? maxRetries;
+  }
+  if (args.contains('--headless')) {
+    headless = true;
+  }
 
   final file = File(input);
   if (!await file.exists()) {
@@ -39,8 +58,14 @@ Future<void> main(List<String> args) async {
   if (fetchWeb) {
     // input is a URL
     final uri = Uri.parse(input);
-    final scraper = EssScraper(uri, rateLimit: const Duration(seconds: 2));
-    print('Fetching and scraping: $input');
+    final scraper = EssScraper(
+      uri,
+      rateLimit: Duration(seconds: rateLimitSecs),
+      timeout: Duration(seconds: timeoutSecs),
+      maxRetries: maxRetries,
+      headless: headless,
+    );
+    print('Fetching and scraping: $input (rate-limit=${rateLimitSecs}s, timeout=${timeoutSecs}s, maxRetries=${maxRetries}, headless=${headless})');
     rows = await scraper.fetchAllStages();
   } else if (usePdfJs) {
     print('Using Node/pdf.js extractor (requires node + pdfjs-dist)');
