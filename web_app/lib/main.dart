@@ -40,6 +40,10 @@ class _DemoHomeState extends State<DemoHome> {
   Map<int, String> _shooterListMap = {};
   String _lastError = '';
   final TextEditingController _baseUrlController = TextEditingController(text: 'https://hkg.as.ipscess.org/portal?match=21');
+  // Progress state for web fetch
+  int _totalDivisions = 0;
+  int _fetchedDivisions = 0;
+  String _currentDivisionLabel = '';
 
   Future<void> _pickAndExtract() async {
     // Enable debug logging for the embedded pdf.js extractor so errors and
@@ -283,15 +287,36 @@ class _DemoHomeState extends State<DemoHome> {
       }
 
       final rows = <ResultRow>[];
-      for (final href in divisionHrefs) {
+      final hrefList = divisionHrefs.toList();
+      _totalDivisions = hrefList.length;
+      _fetchedDivisions = 0;
+      _currentDivisionLabel = '';
+      setState(() {});
+
+      for (var i = 0; i < hrefList.length; i++) {
+        final href = hrefList[i];
         // polite rate limit
         await Future.delayed(const Duration(seconds: 2));
         final resolved = baseUri.resolve(href).toString();
         final uri = resolved.contains('?') ? (resolved + '&group=stage') : (resolved + '?group=stage');
-        final r = await html.HttpRequest.request(uri, method: 'GET');
-        final doc2 = html_parser.parse(r.responseText);
-        final part = EssScraper.parseDivisionStagesFromDocument(doc2);
-        rows.addAll(part);
+        _currentDivisionLabel = href;
+        setState(() {});
+
+        try {
+          final r = await html.HttpRequest.request(uri, method: 'GET');
+          final doc2 = html_parser.parse(r.responseText);
+          final part = EssScraper.parseDivisionStagesFromDocument(doc2);
+          rows.addAll(part);
+          _fetchedDivisions = i + 1;
+          setState(() {
+            _resultRows = List<ResultRow>.from(rows);
+          });
+        } catch (e) {
+          // record failure but continue
+          html.window.console.error('Failed to fetch division $uri: $e');
+          _fetchedDivisions = i + 1;
+          setState(() {});
+        }
       }
 
       // apply shooter-list mapping if present
@@ -305,6 +330,9 @@ class _DemoHomeState extends State<DemoHome> {
       setState(() {
         _resultRows = rows;
         _lastError = rows.isEmpty ? 'No rows found from web fetch' : '';
+        _currentDivisionLabel = '';
+        _totalDivisions = 0;
+        _fetchedDivisions = 0;
       });
     } catch (e) {
       setState(() {
@@ -369,6 +397,19 @@ class _DemoHomeState extends State<DemoHome> {
               ],
             ),
             const SizedBox(height: 8),
+            // Progress indicator for web fetch
+            if (_totalDivisions > 0)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  LinearProgressIndicator(
+                    value: _totalDivisions > 0 ? (_fetchedDivisions / _totalDivisions) : null,
+                  ),
+                  const SizedBox(height: 6),
+                  Text('Fetching divisions: ${_fetchedDivisions}/${_totalDivisions} ${_currentDivisionLabel.isNotEmpty ? "— ${_currentDivisionLabel}" : ""}'),
+                ],
+              ),
+            if (_totalDivisions > 0) const SizedBox(height: 8),
             // Shooter-list load indicator
             Row(
               children: _shooterListMap.isNotEmpty
