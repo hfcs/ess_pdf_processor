@@ -7,6 +7,8 @@ import 'package:ess_pdf_processor/parser/pdfjs_web_extractor.dart';
 import 'package:ess_pdf_processor/parser/text_parser.dart';
 import 'package:ess_pdf_processor/parser/shooter_list_text_parser.dart';
 import 'package:ess_pdf_processor/models/result_row.dart';
+import 'package:ess_pdf_processor/scraper/ess_scraper.dart';
+import 'package:html/parser.dart' as html_parser;
 // Access window properties via dynamic interop instead of `dart:js_util`.
 
 void main() {
@@ -37,6 +39,7 @@ class _DemoHomeState extends State<DemoHome> {
   bool _loading = false;
   Map<int, String> _shooterListMap = {};
   String _lastError = '';
+  final TextEditingController _baseUrlController = TextEditingController(text: 'https://hkg.as.ipscess.org/portal?match=21');
 
   Future<void> _pickAndExtract() async {
     // Enable debug logging for the embedded pdf.js extractor so errors and
@@ -257,6 +260,63 @@ class _DemoHomeState extends State<DemoHome> {
     }
   }
 
+  Future<void> _fetchFromWeb() async {
+    final base = _baseUrlController.text.trim();
+    if (base.isEmpty) return;
+    setState(() {
+      _loading = true;
+      _lastError = '';
+      _resultRows = [];
+    });
+    try {
+      final baseUri = Uri.parse(base);
+      // Fetch base page via browser HttpRequest (respects CORS)
+      final resp = await html.HttpRequest.request(baseUri.toString(), method: 'GET');
+      final doc = html_parser.parse(resp.responseText);
+      // find division links like /portal/results/21?division=1
+      final anchors = doc.querySelectorAll('a.list-group-item-action[href]');
+      final divisionHrefs = <String>{};
+      for (final a in anchors) {
+        final href = a.attributes['href'];
+        if (href == null) continue;
+        if (href.contains('/portal/results/')) divisionHrefs.add(href);
+      }
+
+      final rows = <ResultRow>[];
+      for (final href in divisionHrefs) {
+        // polite rate limit
+        await Future.delayed(const Duration(seconds: 2));
+        final resolved = baseUri.resolve(href).toString();
+        final uri = resolved.contains('?') ? (resolved + '&group=stage') : (resolved + '?group=stage');
+        final r = await html.HttpRequest.request(uri, method: 'GET');
+        final doc2 = html_parser.parse(r.responseText);
+        final part = EssScraper.parseDivisionStagesFromDocument(doc2);
+        rows.addAll(part);
+      }
+
+      // apply shooter-list mapping if present
+      for (final r in rows) {
+        if (_shooterListMap.containsKey(r.competitorNumber)) {
+          final token = _shooterListMap[r.competitorNumber] ?? '';
+          r.classification = (token == 'GM' || token.isEmpty) ? 'Overall' : token;
+        }
+      }
+
+      setState(() {
+        _resultRows = rows;
+        _lastError = rows.isEmpty ? 'No rows found from web fetch' : '';
+      });
+    } catch (e) {
+      setState(() {
+        _resultRows = [];
+        _lastError = 'Web fetch error: $e';
+      });
+      try { html.window.console.error('Demo app: web fetch error: $e'); } catch (_) {}
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
+
   // Use the shared, web-safe shooter-list text parser.
   // parseShooterListFromText is imported from
   // `package:ess_pdf_processor/parser/shooter_list_text_parser.dart`.
@@ -284,6 +344,27 @@ class _DemoHomeState extends State<DemoHome> {
                   onPressed: _loading ? null : _pickAndLoadShooterList,
                   icon: const Icon(Icons.upload_file),
                   label: const Text('Pick shooter-list PDF'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            // Web fetch controls: base URL input + fetch button
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _baseUrlController,
+                    decoration: const InputDecoration(
+                      labelText: 'Competition URL',
+                      hintText: 'https://hkg.as.ipscess.org/portal?match=21',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  onPressed: _loading ? null : _fetchFromWeb,
+                  icon: const Icon(Icons.public),
+                  label: const Text('Fetch web results'),
                 ),
               ],
             ),
