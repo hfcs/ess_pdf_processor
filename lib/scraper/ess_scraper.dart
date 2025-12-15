@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as html_parser;
@@ -54,12 +55,39 @@ class EssScraper {
   }
 
   Future<List<ResultRow>> _fetchDivisionStages(Uri uri) async {
-    // If headless requested, a headless fetch can be implemented here.
-    // Currently we still attempt normal HTTP fetch; headless is left as
-    // an opt-in hookup for a future implementation.
+    if (headless) {
+      // Call the Node headless fetch helper which should print HTML to stdout.
+      final html = await _headlessFetchHtml(uri);
+      final doc = html_parser.parse(html);
+      return parseDivisionStagesFromDocument(doc);
+    }
     final resp = await _getWithRetries(uri);
     final doc = html_parser.parse(utf8.decode(resp.bodyBytes));
     return parseDivisionStagesFromDocument(doc);
+  }
+
+  Future<String> _headlessFetchHtml(Uri uri) async {
+    // Look for node and the helper script in scripts/headless_fetch.js
+    final script = 'scripts/headless_fetch.js';
+    // Ensure node exists
+    final which = await Process.run('which', ['node']);
+    if (which.exitCode != 0) throw Exception('Node not found in PATH; required for headless mode');
+
+    final proc = await Process.start('node', [script, uri.toString()]);
+    final out = <int>[];
+    final errBuf = StringBuffer();
+
+    proc.stdout.listen((data) => out.addAll(data));
+    proc.stderr.transform(utf8.decoder).listen((s) => errBuf.write(s));
+
+    final exitCode = await proc.exitCode.timeout(timeout, onTimeout: () {
+      proc.kill(ProcessSignal.sigkill);
+      throw TimeoutException('Headless fetch timed out for $uri');
+    });
+    if (exitCode != 0) {
+      throw Exception('Headless fetch failed: ${errBuf.toString()}');
+    }
+    return utf8.decode(out);
   }
 
   // Exposed for unit testing: parse a Document into ResultRows
