@@ -1,17 +1,16 @@
 # ess_pdf_processor
-Small toolkit and parser patterns for extracting IPSC "ESS" (Electronic Scoring System) PDF results into a consolidated CSV for analytics.
+Small toolkit and parser patterns for extracting IPSC "ESS" (Electronic Scoring System) results into a consolidated CSV for analytics.
 
-## PDF extraction options (Node / Browser)
+## Extraction options
 
-This project supports two robust PDF→text extraction routes that decode embedded fonts and provide text coordinates:
+This project supports several extraction routes:
 
-- Node/pdf.js (recommended for server/CLI): uses `pdfjs-dist` via Node to extract text content with coordinates. Useful for CI and local scripts; the repo includes `scripts/extract_pdfjs.js` and `scripts/package.json` (run `cd scripts && npm install`). The CLI runner supports `--pdfjs` to prefer this path: `dart run bin/run.dart input.pdf out.csv --pdfjs`.
-- Browser (recommended for Flutter web client): use PDF.js in the browser to extract `getTextContent()` per page (text items include transform matrices). We provide a small web helper (`web/pdf_extract.js`) and a Dart JS-interop wrapper (`lib/parser/pdfjs_web_extractor.dart`) so a Flutter web app can extract text client-side without uploading PDFs.
+- CLI/server: prefers `pdftotext` (system `poppler`), with an optional Node/pdf.js fallback for PDFs when requested via `--pdfjs`.
+- Web/client: the example Flutter web app (`web_app`) performs client-side HTML fetching of public ESS results pages and parses server-rendered stage tables directly in the browser. The in-browser PDF upload/processing flow has been removed from the example app.
 
 Notes and recommendations:
-- For most users wanting a web-first experience, use the browser-side PDF.js extractor (privacy-preserving — files never leave the user's machine) and then parse coordinates into rows in Dart.
-- For CLI or CI usage, `pdftotext` (system) and Node/pdf.js are both valid options; the CLI prefers `pdftotext` when available, and falls back to the Node/pdf.js path if `--pdfjs` is passed.
- - For CLI or CI usage, `pdftotext` (system) and Node/pdf.js are both valid options; the CLI prefers `pdftotext` when available, and falls back to the Node/pdf.js path if `--pdfjs` is passed.
+- For server/CLI processing of PDFs, use `pdftotext -layout` when available for fastest and most accurate input to the text parser. The CLI will fall back to Node/pdf.js when `--pdfjs` is used.
+- For a web-first, privacy-preserving client experience prefer the `web_app` client-side HTML fetcher when the target site permits cross-origin requests. For JS-rendered pages or pages that disallow client fetches, use the CLI with the headless Node/Puppeteer helper.
 
 Testing & forcing the heuristic fallback
 --------------------------------------

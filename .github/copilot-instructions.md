@@ -5,8 +5,8 @@ High-value guidance for working on the ESS PDF processor (current state: feature
 ## What's changed (current state)
 - The CSV now includes a `class` column immediately after `competitor_name`.
 - A web-safe, shared shooter-list text parser was added: `lib/parser/shooter_list_text_parser.dart`.
-  - This function `parseShooterListFromText(String)` is reused by the CLI and the Flutter web app.
-  - The Flutter web app (`web_app`) now supports loading a shooter-list PDF (via pdf.js in-browser extraction), shows a small indicator with the number of entries loaded, and applies the shooter-list mapping (competitor number → class) to parsed rows.
+  - This function `parseShooterListFromText(String)` is reused by the CLI. The CLI still supports loading a shooter-list PDF via its `--shooter-list` option and will apply the mapping (competitor number → class) to parsed rows.
+  - Note: the Flutter example app (`web_app`) no longer supports uploading PDFs. It now provides a client-side HTML fetcher that requests public ESS results pages, parses stage tables from the returned HTML, and exports consolidated CSV matching the project's `ResultRow` schema.
 - Unit tests were added for the shooter-list text parser: `test/shooter_list_text_parser_test.dart`.
 - CI additions:
   - `shooter_list_tests` job runs the parser unit tests.
