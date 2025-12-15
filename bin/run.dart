@@ -5,6 +5,7 @@ import 'package:ess_pdf_processor/models/result_row.dart';
 import 'package:ess_pdf_processor/parser/pdfjs_extractor.dart' as pdfjs_extractor;
 import 'package:ess_pdf_processor/parser/shooter_list_parser.dart' as shooter_list_parser;
 import 'package:ess_pdf_processor/parser/text_parser.dart' show parseTextToRows;
+import 'package:ess_pdf_processor/scraper/ess_scraper.dart';
 
 Future<void> main(List<String> args) async {
   if (args.length < 2) {
@@ -14,6 +15,8 @@ Future<void> main(List<String> args) async {
 
   final input = args[0];
   final output = args[1];
+  // If --fetch-web is provided, input is treated as a URL to scrape
+  final fetchWeb = args.contains('--fetch-web');
 
   final file = File(input);
   if (!await file.exists()) {
@@ -33,7 +36,13 @@ Future<void> main(List<String> args) async {
     if (idx >= 0 && idx + 1 < args.length) shooterListPath = args[idx + 1];
   }
   List<ResultRow> rows;
-  if (usePdfJs) {
+  if (fetchWeb) {
+    // input is a URL
+    final uri = Uri.parse(input);
+    final scraper = EssScraper(uri, rateLimit: const Duration(seconds: 2));
+    print('Fetching and scraping: $input');
+    rows = await scraper.fetchAllStages();
+  } else if (usePdfJs) {
     print('Using Node/pdf.js extractor (requires node + pdfjs-dist)');
     try {
       final extracted = await pdfjs_extractor.extractWithPdfJs(file);
