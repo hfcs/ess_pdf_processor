@@ -19,7 +19,7 @@ Notes
 - The in-browser PDF upload flow has been removed. Use the CLI for PDF-based extraction or the headless Node/Puppeteer helper for JS-rendered pages when required.
 
 Debug logging
-- The web app supports an optional `window.__ESS_DEBUG__` flag to enable verbose console logs for development. Do not enable this in production.
+- The web app no longer exposes the `window.__ESS_DEBUG__` flag; debug instrumentation was removed.
 
 Firebase Hosting
 - The repository includes Firebase config and a CI workflow that can deploy the built `web_app/build/web` artifact to Firebase Hosting. See the repo root `README.md` for CI and deployment notes.

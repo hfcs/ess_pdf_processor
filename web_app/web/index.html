@@ -7,9 +7,7 @@
     <title>ESS PDF.js Demo</title>
     <!-- pdf.js from CDN -->
     <script src="https://unpkg.com/pdfjs-dist@3.9.179/build/pdf.js"></script>
-    <!-- Optional local debug toggle. Create web/debug.js to enable logs (dev only).
-  Use the helper script in web_app/scripts/ to generate it. -->
-    <script src="debug.js"></script>
+    <!-- pdf.js worker configured below -->
     <script>
       // Configure worker (CDN)
       if (window.pdfjsLib) {
@@ -40,13 +38,7 @@
             return { x: tr[4] || 0, y: tr[5] || 0, str: it.str };
           });
 
-          // Debugging: log per-page counts so we can see whether text items were found.
-          // Debug logging (enable by setting window.__ESS_DEBUG__ = true in the page)
-          try {
-            if (window.__ESS_DEBUG__) console.log(`pdfjs: page ${p} text items: ${textContent.items.length}, mapped items: ${items.length}`);
-          } catch (e) {
-            // ignore logging errors
-          }
+          // per-page extraction (no debug logging)
 
           const groups = new Map();
           for (const it of items) {
@@ -83,32 +75,14 @@
           }
         }
 
-        try {
-          if (window.__ESS_DEBUG__) console.log('pdfjs: extraction complete, rows=', out.length);
-        } catch (e) {}
+        // extraction complete
 
         return out;
       };
     </script>
   </head>
   <body>
-    <div id="app-status" style="position:fixed;top:8px;right:8px;background:rgba(255,255,255,0.95);color:#111;padding:6px;border:1px solid #ddd;border-radius:4px;z-index:9999;font-family:system-ui, -apple-system, Roboto, Arial, sans-serif;font-size:13px">Loading app…</div>
-    <script>
-      // Ensure the status box shows an initial message and log presence for debugging.
-      document.addEventListener('DOMContentLoaded', function () {
-          try {
-            var s = document.getElementById('app-status');
-            if (s) {
-              s.textContent = 'index.html loaded';
-              if (window.__ESS_DEBUG__) console.log('app-status element present');
-            } else {
-              if (window.__ESS_DEBUG__) console.warn('app-status element not found');
-            }
-          } catch (e) {
-            if (window.__ESS_DEBUG__) console.error('Error setting app-status:', e);
-          }
-      });
-    </script>
+    <!-- App status handled by Flutter app; no debug UI injected here -->
     <script src="main.dart.js"></script>
   </body>
 </html>
