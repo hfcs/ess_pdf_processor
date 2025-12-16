@@ -18,7 +18,7 @@ class DemoApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'ESS PDF to CSV converter',
+      title: 'ESS web result to CSV extractor',
       home: const DemoHome(),
     );
   }
@@ -144,7 +144,7 @@ class _DemoHomeState extends State<DemoHome> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('ESS PDF to CSV converter')),
+      appBar: AppBar(title: const Text('ESS web result to CSV extractor')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
