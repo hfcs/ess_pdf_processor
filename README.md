@@ -171,10 +171,8 @@ web_app/build/web
 
 CI / Deploy notes
 
--- This repository now contains a root-level `firebase.json` that points `hosting.public` to `web_app/build/web`. The GitHub Actions deploy job uses the Firebase Hosting GitHub Action.
-- To enable automatic deployments from CI you must add a repository secret named `FIREBASE_SERVICE_ACCOUNT` containing the Firebase service account JSON (the service account needs Hosting deploy permissions). See repository Settings → Secrets & variables → Actions.
-
-Deploy locally (manual steps)
+firebase deploy --only hosting --project ess-web-extractor
+-- To enable automatic deployments from CI you must create a Firebase service account (Hosting deploy permissions) and add its JSON as a repository secret named `FIREBASE_SERVICE_ACCOUNT_ESS_WEB_EXTRACTOR` in Settings → Secrets & variables → Actions. Update the workflows if you use a different secret name.
 
 ```bash
 # build the web artifact
@@ -185,7 +183,7 @@ npm install -g firebase-tools
 firebase login
 
 # deploy to hosting
-firebase deploy --only hosting --project ess-pdf-processor
+firebase deploy --only hosting --project ess-web-extractor
 ```
 
 If you'd rather have CI produce preview deploys for PRs instead of deploying to production on main, I can update the workflow to use preview channels or to only deploy on tags.

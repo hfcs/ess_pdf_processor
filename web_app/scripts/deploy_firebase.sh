@@ -14,8 +14,8 @@ fi
 echo "Building Flutter web app..."
 flutter build web --release
 
-# Deploy to the configured Firebase project in .firebaserc (default: ess-pdf-processor)
-echo "Deploying to Firebase Hosting (project: ess-pdf-processor)..."
-firebase deploy --only hosting --project ess-pdf-processor
+# Deploy to the configured Firebase project in .firebaserc (default: ess-web-extractor)
+echo "Deploying to Firebase Hosting (project: ess-web-extractor)..."
+firebase deploy --only hosting --project ess-web-extractor
 
 echo "Deployment finished."

@@ -28,6 +28,6 @@ jobs:
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ESS_PDF_PROCESSOR }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ESS_WEB_EXTRACTOR }}
           channelId: live
-          projectId: ess-pdf-processor
+          projectId: ess-web-extractor

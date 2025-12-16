@@ -29,8 +29,8 @@ High-value guidance for working on the ESS PDF processor (current state: feature
     (this will cd into `web_app` and run `flutter build web --release`)
 
 - CI / Deployment
-  - The workflow uses `FirebaseExtended/action-hosting-deploy@v0` and expects a repository secret named `FIREBASE_SERVICE_ACCOUNT` containing the service account JSON for deployment.
-  - To enable automatic deploys: create a Firebase service account with Hosting permissions, add its JSON as the `FIREBASE_SERVICE_ACCOUNT` secret in repository Settings → Secrets & variables → Actions.
+  - The workflow uses `FirebaseExtended/action-hosting-deploy@v0` and expects a repository secret named `FIREBASE_SERVICE_ACCOUNT_ESS_WEB_EXTRACTOR` containing the service account JSON for deployment.
+  - To enable automatic deploys: create a Firebase service account with Hosting permissions, add its JSON as the `FIREBASE_SERVICE_ACCOUNT_ESS_WEB_EXTRACTOR` secret in repository Settings → Secrets & variables → Actions.
 
 ## Architecture & Data Flow (summary)
 - Input: `TableBlock(stage, division, rows: List<Map<String,String?>>)` — normalized cell keys (lowercase, trimmed, collapsed spaces).
